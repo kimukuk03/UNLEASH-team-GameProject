@@ -10,7 +10,8 @@ public class Monster : MonoBehaviour
 
     private Vector3 direction;
     private Rigidbody2D rb;
-    public void MoveTo(Vector3 targetPosition)
+
+    public void SetDirection(Vector3 targetPosition)
     {
         direction = (targetPosition - transform.position).normalized;
     }

@@ -5,20 +5,24 @@ using UnityEngine.InputSystem;
 
 public class GameDirector : MonoBehaviour
 {
+    private void Start()
+    {
+        player = GameObject.FindGameObjectWithTag("Player");
+        monsters = GameObject.FindGameObjectsWithTag("Monster");
+    }
     void Update()
     {
-        if (Mouse.current.leftButton.wasPressedThisFrame)
+        targetPosition = player.transform.position;
+        targetPosition.z = 0;
+
+        foreach (GameObject monster in monsters)
         {
-            Vector3 targetPosition = Camera.main.ScreenToWorldPoint(Mouse.current.position.ReadValue());
-            targetPosition.z = 0;
-
-            GameObject[] monsters = GameObject.FindGameObjectsWithTag("Monster");
-
-            foreach (GameObject monster in monsters)
-            {
-                Monster monsterComponent = monster.GetComponent<Monster>();
-                monsterComponent.MoveTo(targetPosition);
-            }
+            Monster monsterComponent = monster.GetComponent<Monster>();
+            monsterComponent.SetDirection(targetPosition);
         }
+        
     }
+    private GameObject player;
+    private Vector3 targetPosition;
+    private GameObject[] monsters;
 }
