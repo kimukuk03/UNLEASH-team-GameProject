@@ -37,7 +37,7 @@ public class MobController : MonoBehaviour
     {
         foreach (Monster monster in monsters)
         {
-            monster.SetDirection(targetPosition);
+            monster.HandlePlayerLocation(targetPosition);
         }
     }
 }
