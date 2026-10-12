@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: -7540931550620491845}
   - component: {fileID: -8941595861782192538}
   m_Layer: 3
-  m_Name: TestMob
+  m_Name: TestMob_Main
   m_TagString: Monster
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
