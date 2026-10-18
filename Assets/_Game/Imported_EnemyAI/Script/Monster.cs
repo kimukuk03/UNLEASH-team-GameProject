@@ -12,12 +12,12 @@ public class Monster : MonoBehaviour
     public Vector3 m_direction;
     //public Vector3 m_playerLocation;
     private Rigidbody2D m_rigdollBody2D;
-    private MOBSTATE m_state;
+    private MONSTERSTATE m_state;
 
     private bool m_isFacedBack = false;
     void Awake()
     {
-        m_state = MOBSTATE.IDLE;
+        m_state = MONSTERSTATE.IDLE;
         //m_rigdollBody2D = GetComponent<Rigidbody2D>();
     }
     void Start()
@@ -32,17 +32,17 @@ public class Monster : MonoBehaviour
     {
         switch (m_state)
         {
-            case (MOBSTATE.IDLE):
+            case (MONSTERSTATE.IDLE):
                 {
                     StateIDLE();
                     break;
                 }
-            case (MOBSTATE.CHASE):
+            case (MONSTERSTATE.CHASE):
                 {
                     StateChase();
                     break;
                 }
-            case (MOBSTATE.DEAD):
+            case (MONSTERSTATE.DEAD):
                 {
                     StateDead();
                     break;
@@ -103,14 +103,14 @@ public class Monster : MonoBehaviour
 
    public void SetStateToIDLE()
     {
-        m_state = MOBSTATE.IDLE;
+        m_state = MONSTERSTATE.IDLE;
     }
     public void SetStateToChase()
     {
-        m_state = MOBSTATE.CHASE;
+        m_state = MONSTERSTATE.CHASE;
     }
     public void SetStateToDead()
     {
-        m_state = MOBSTATE.DEAD;
+        m_state = MONSTERSTATE.DEAD;
     }
 }
