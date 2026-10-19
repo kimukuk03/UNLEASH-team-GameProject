@@ -1,0 +1,6 @@
+- idle : 0
+- move : 1~8
+- attack : 28~33 
+	- effect_attack_back : 186~188
+	- effect_attack_front : 189~191
+- dead: 9
