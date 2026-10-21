@@ -6,26 +6,42 @@ using UnityEngine.InputSystem;
 
 public class MobController : MonoBehaviour
 {
+    //public float firstRepeatDelay = 0.0f;
+    public float updateDelay = 0.1f;
+    
     private GameObject player;
     private List<Monster> monsters = new();
+
+
 
     void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player");
+        //InvokeRepeating("SetMonstersDirection", firstRepeatDelay, updateDelay);
+
         // player = FindFirstObjectByType<GameObject>();
+        StartCoroutine("MobControllerUpdate");
     }
     void Update()
     {
-
-        Vector3 targetPosition = GetPlayerPosition();
-
-        SetMonstersDirection(targetPosition);
     }
 
+    IEnumerator MobControllerUpdate()
+    {
+        while (true)
+        {
+            SetMonstersDirection();
 
+            yield return new WaitForSeconds(updateDelay);
+        }
+    }
     public void AddMonster(Monster monster)
     {
         monsters.Add(monster);
+    }
+    public void RemoveMonster(Monster monster)
+    {
+        monsters.Remove(monster);
     }
     private Vector3 GetPlayerPosition()
     {
@@ -33,8 +49,10 @@ public class MobController : MonoBehaviour
         playerPosition.z = 0;
         return playerPosition;
     }
-    private void SetMonstersDirection(Vector3 targetPosition)
+    private void SetMonstersDirection()
     {
+        Vector3 targetPosition = GetPlayerPosition();
+
         foreach (Monster monster in monsters)
         {
             monster.HandlePlayerLocation(targetPosition);
