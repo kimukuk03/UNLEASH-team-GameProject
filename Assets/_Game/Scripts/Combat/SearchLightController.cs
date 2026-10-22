@@ -10,7 +10,7 @@ public class SearchLightController : MonoBehaviour
     [SerializeField] private Transform interactPoint;
 
     private bool playerInRange = false;
-    private bool isControlling = false;
+    private bool isControlling = true;
 
     private GameObject player;
     private PlayerMover playerMover;

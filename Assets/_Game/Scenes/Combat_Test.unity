@@ -1416,8 +1416,13 @@ PrefabInstance:
       propertyPath: m_ApplyToSortingLayers.Array.data[1]
       value: 1589248551
       objectReference: {fileID: 0}
+    - target: {fileID: 8701398467393686513, guid: 77022d62df344144ba411c2df1b6fc6c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 8701398467393686513, guid: 77022d62df344144ba411c2df1b6fc6c, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 1527653217136792957, guid: 77022d62df344144ba411c2df1b6fc6c, type: 3}
       insertIndex: -1
