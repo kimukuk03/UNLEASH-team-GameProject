@@ -1,9 +1,11 @@
+using System.Collections;
 using UnityEngine;
 
 public class GunController : MonoBehaviour
 {
-    [SerializeField] private Transform muzzlePoint;
+    [SerializeField] private GameObject muzzlePoint;
     [SerializeField] private GameObject bulletPrefab;
+    [SerializeField] private GameObject muzzleFlashPrefab;
 
     private void Update()
     {
@@ -17,8 +19,16 @@ public class GunController : MonoBehaviour
     {
         Instantiate(
             bulletPrefab,
-            muzzlePoint.position,
-            muzzlePoint.rotation
+            muzzlePoint.transform.TransformPoint(0.05f, 0.2f, 0f),
+            muzzlePoint.transform.rotation
         );
+
+        Instantiate(
+            muzzleFlashPrefab,
+            muzzlePoint.transform.TransformPoint(0.05f, 0.2f, 0f),
+            Quaternion.FromToRotation(-Vector3.right, muzzlePoint.transform.up),
+            muzzlePoint.transform
+        );
+
     }
 }
