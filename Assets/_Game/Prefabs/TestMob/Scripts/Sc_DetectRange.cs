@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class DetectRange : MonoBehaviour
 {
-    private Monster parent = null;  //부모 = 없음 엌ㅋㅋㅋ; 저도 하나 없어요, 그러니 오해하지 말아주세요.
+    private Monster parent; 
     // Start is called before the first frame update
     void Start()
     {
