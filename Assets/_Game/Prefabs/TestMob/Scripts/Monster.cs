@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,29 +9,36 @@ using UnityEngine;
 
 public class Monster : MonoBehaviour
 {
-    public float updateDelay = 0.1f;
-    public float speed = 3f;
+    protected int maxHp = 100;
+    protected int hp = 100;
+
+    public float updateDelay = 0.3f;
+    public float standardSpeed = 3f;
+    private float speed = 3f;
     public Vector3 m_direction;
     //public Vector3 m_playerLocation;
-    private Rigidbody2D m_rigdollBody2D;
+    private Rigidbody2D m_rigdboby;
     public MONSTERSTATE m_state;
     //private bool m_isFacedBack = false;
 
     MobController mobController;
     private DetectRange detectRange;
+    private Script_Testmob_AttackRange attackRange;
     private Script_TestMob_Sprite sprite;
     void Awake()
     {
         m_state = MONSTERSTATE.IDLE;
-        //m_rigdollBody2D = GetComponent<Rigidbody2D>();
+        //m_rigdboby = GetComponent<Rigidbody2D>();
     }
     void Start()
     {
-        mobController = FindFirstObjectByType<MobController>();
-
-        m_rigdollBody2D = GetComponent<Rigidbody2D>();
+        mobController = GetComponentInParent<MobController>();
+        m_rigdboby = GetComponent<Rigidbody2D>();
         detectRange = GetComponentInChildren<DetectRange>();
+        attackRange = GetComponentInChildren<Script_Testmob_AttackRange>();
         sprite = GetComponentInChildren<Script_TestMob_Sprite>();
+
+        mobController.AddMonster(this);
 
         StartCoroutine("MonsterUpdate");
     }
@@ -38,41 +46,81 @@ public class Monster : MonoBehaviour
     void Update()
     {
     }
+    // update 대용으로 쓰는 느낌의 함수?
+    // while을 반복하지만 명령 실행에 updateDelay만큼 대기하고 실행합니다.
+    // sleep과는 다르게 대기 중에도 다른 기능은 정상적으로 작동합니다.
     IEnumerator MonsterUpdate()
     {
         while (true)
         {
-            switch (m_state)
-            {
-                case (MONSTERSTATE.IDLE):
-                    {
-                        StateIDLE();
-                        break;
-                    }
-                case (MONSTERSTATE.CHASE):
-                    {
-                        StateChase();
-                        break;
-                    }
-                case (MONSTERSTATE.DEAD):
-                    {
-                        StateDead();
-                        break;
-                    }
-            }
+            // 어떤 상태로 할 지 결정.
+            DecideState();
+            // 어떤 상태인가에 따라 행동.
+            ActionByState();
 
             yield return new WaitForSeconds(updateDelay);
         }
     }
-public void HandlePlayerLocation(Vector3 targetPosition)
+
+    private void DecideState()
     {
-        SetDirectionToPlayer(targetPosition);
+        // 안죽었을 경우에만 상태 재정의.
+        // 1.공격범위 내라면 공격
+        // 2. 아니고 감지범위 내라면 추적.
+        // 3. 그것도 아니면 대기.
+        if(m_state != MONSTERSTATE.DEAD)
+        {
+            if (attackRange.GetIsPlayerInAttackRange())
+            {
+                this.SetStateToAttack();
+            }
+            else if (detectRange.GetIsPlayerInDetectRange())
+            {
+                this.SetStateToChase();
+            }
+            else
+            {
+                this.SetStateToIDLE();
+            }
+        }
     }
+    private void ActionByState()
+    {
+        switch (m_state)
+        {
+            case (MONSTERSTATE.IDLE):
+                {
+                    StateIDLE();
+                    break;
+                }
+            case (MONSTERSTATE.CHASE):
+                {
+                    StateChase();
+                    break;
+                }
+            case (MONSTERSTATE.ATTACK):
+                {
+                    StateAttack();
+                    break;
+                }
+            case (MONSTERSTATE.DEAD):
+                {
+                    StateDead();
+                    break;
+                }
+        }
+    }
+
+
+
+    // mob controller에서 작동하면 플레이어의 위치를 가져옵니다.
+    // 모든 몬스터 개체에서 플레이어 위치를 구하는 것 보다는 효율적일 것이라 생각했었습니다.
+    // 아무튼 위치를 가져오면 다음 이동 방향을 플레이어 방향으로 재설정 합니다.
 
     // 그냥 평상시
     void StateIDLE()
     {
-
+        ResetVelocity();
     }
     // 플레이어 감지, 추격.
     void StateChase()
@@ -81,11 +129,24 @@ public void HandlePlayerLocation(Vector3 targetPosition)
 
         Move();
     }
+
+    void StateAttack()
+    {
+        ResetVelocity();
+    }
     void StateDead()
     {
+        mobController.RemoveMonster(this);
         Destroy(gameObject);    // 컴포넌트가 터져서 죽습니다. 터져서 없어짐 수고요.
     }
-
+    public void Move()
+    {
+        m_rigdboby.MovePosition(m_rigdboby.position + (Vector2)m_direction * speed * Time.fixedDeltaTime);
+    }
+    private void ResetVelocity()
+    {
+        m_rigdboby.velocity = Vector3.zero;
+    }
     //void SetIsFacedBack()
     //{
     //    if (0 > m_direction.x)
@@ -107,26 +168,35 @@ public void HandlePlayerLocation(Vector3 targetPosition)
         sprite.SetSpriteDirection(gap.x);
         
     }
-    void Move()
-    {
-        m_rigdollBody2D.MovePosition(m_rigdollBody2D.position + (Vector2)m_direction * speed * Time.fixedDeltaTime);
-    }
+
 
    public void SetStateToIDLE()
     {
+       // Debug.Log("State : IDLE");
         m_state = MONSTERSTATE.IDLE;
-
-        mobController.RemoveMonster(this);
-
     }
     public void SetStateToChase()
     {
-        m_state = MONSTERSTATE.CHASE;
+      //  Debug.Log("State : Chase");
 
-        mobController.AddMonster(this);
+        m_state = MONSTERSTATE.CHASE;
+    }
+    public void SetStateToAttack()
+    {
+
+       // Debug.Log("State : Attack");
+
+        m_state = MONSTERSTATE.ATTACK;
     }
     public void SetStateToDead()
     {
+       // Debug.Log("State : Dead");
+
         m_state = MONSTERSTATE.DEAD;
+    }  
+    public void HandlePlayerLocation(Vector3 targetPosition)
+    {
+        SetDirectionToPlayer(targetPosition);
     }
+
 }

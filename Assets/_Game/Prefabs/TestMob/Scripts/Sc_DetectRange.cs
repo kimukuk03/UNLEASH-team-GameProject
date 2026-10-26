@@ -5,6 +5,7 @@ using UnityEngine;
 public class DetectRange : MonoBehaviour
 {
     private Monster parent; 
+    private bool isPlayerInDetectRange = false;
     // Start is called before the first frame update
     void Start()
     {
@@ -21,15 +22,19 @@ public class DetectRange : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            parent.SetStateToChase();
+            isPlayerInDetectRange = true;
         }
     }
     private void OnTriggerExit2D(Collider2D other)
     {
         if (other.CompareTag("Player"))
         {
-            parent.SetStateToIDLE();
-
+            isPlayerInDetectRange = false;
         }
     }
+    public bool GetIsPlayerInDetectRange()
+    {
+        return isPlayerInDetectRange;
+    }
+
 }

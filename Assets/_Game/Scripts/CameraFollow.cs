@@ -8,7 +8,7 @@ public class CameraFollow : MonoBehaviour
     public float speed = 3f;
     private void Update()
     {
-        Test();
+
     }
     void LateUpdate()
     {
@@ -17,8 +17,4 @@ public class CameraFollow : MonoBehaviour
         transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * speed);
     }
 
-    private void Test()
-    {
-        Debug.Log("SONJUNHWE\n");
-    }
 }

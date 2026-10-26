@@ -18,7 +18,7 @@ public class MobController : MonoBehaviour
     {
         player = GameObject.FindGameObjectWithTag("Player");
         //InvokeRepeating("SetMonstersDirection", firstRepeatDelay, updateDelay);
-
+        
         // player = FindFirstObjectByType<GameObject>();
         StartCoroutine("MobControllerUpdate");
     }
@@ -55,7 +55,10 @@ public class MobController : MonoBehaviour
 
         foreach (Monster monster in monsters)
         {
-            monster.HandlePlayerLocation(targetPosition);
+            if (monster.m_state != MONSTERSTATE.IDLE)
+            {
+                monster.HandlePlayerLocation(targetPosition);
+            }
         }
     }
 }
