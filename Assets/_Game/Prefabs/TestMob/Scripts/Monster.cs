@@ -13,9 +13,14 @@ public class Monster : MonoBehaviour
     protected int hp = 100;
 
     public float updateDelay = 0.3f;
-    public float standardSpeed = 3f;
-    private float speed = 3f;
+    public float standardSpeed = 3f;   
     public Vector3 m_direction;
+
+    private float speed;
+
+
+
+
     //public Vector3 m_playerLocation;
     private Rigidbody2D m_rigdboby;
     public MONSTERSTATE m_state;
@@ -32,6 +37,8 @@ public class Monster : MonoBehaviour
     }
     void Start()
     {
+        speed = standardSpeed;
+
         mobController = GetComponentInParent<MobController>();
         m_rigdboby = GetComponent<Rigidbody2D>();
         detectRange = GetComponentInChildren<DetectRange>();
@@ -40,7 +47,7 @@ public class Monster : MonoBehaviour
 
         mobController.AddMonster(this);
 
-        StartCoroutine("MonsterUpdate");
+        StartCoroutine(MonsterUpdate());
     }
 
     void Update()
