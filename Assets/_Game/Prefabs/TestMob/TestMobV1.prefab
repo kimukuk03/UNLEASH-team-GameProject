@@ -68,6 +68,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: DetectRange
       objectReference: {fileID: 0}
+    - target: {fileID: 4138103330306671241, guid: bc365377890b798489f1fae65fc4680b, type: 3}
+      propertyPath: m_SortingLayer
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4138103330306671241, guid: bc365377890b798489f1fae65fc4680b, type: 3}
+      propertyPath: m_SortingLayerID
+      value: 1589248551
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -106,9 +114,13 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -7540931550620491845, guid: 01a5110fdaf64b74dbfdcb6c44156d04, type: 3}
+      propertyPath: m_Constraints
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 1370846551415216118, guid: 01a5110fdaf64b74dbfdcb6c44156d04, type: 3}
       propertyPath: m_Name
-      value: TestMob Variant
+      value: TestMobV1
       objectReference: {fileID: 0}
     - target: {fileID: 2374298718330369100, guid: 01a5110fdaf64b74dbfdcb6c44156d04, type: 3}
       propertyPath: m_LocalPosition.x
@@ -162,6 +174,14 @@ PrefabInstance:
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: -2413806693520163455, guid: ebe73ca9363db456bacf42c025bb4847, type: 3}
+    - target: {fileID: 8238980025891510005, guid: 01a5110fdaf64b74dbfdcb6c44156d04, type: 3}
+      propertyPath: m_SortingLayer
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8238980025891510005, guid: 01a5110fdaf64b74dbfdcb6c44156d04, type: 3}
+      propertyPath: m_SortingLayerID
+      value: 1589248551
+      objectReference: {fileID: 0}
     - target: {fileID: 8238980025891510005, guid: 01a5110fdaf64b74dbfdcb6c44156d04, type: 3}
       propertyPath: m_WasSpriteAssigned
       value: 1
