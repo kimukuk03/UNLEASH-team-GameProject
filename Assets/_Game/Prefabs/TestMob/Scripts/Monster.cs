@@ -9,27 +9,29 @@ using UnityEngine;
 
 public class Monster : MonoBehaviour
 {
-    protected int maxHp = 100;
-    protected int hp = 100;
-
-    public float updateDelay = 0.3f;
-    public float standardSpeed = 3f;   
+    [SerializeField] protected int maxHp = 100;
+    [SerializeField] private int hp;
+    // 각종 기하 관련 변수입니다.
     public Vector3 m_direction;
-
+    public float standardSpeed = 3f;   
     private float speed;
+    // 현재 상태에 따라 각종 행동이 제어됩니다.
+    public MONSTERSTATE m_state;
+    // update 간격이라고 생각하시면 됩니다.
+    public float updateDelay = 0.1f;
 
 
 
 
     //public Vector3 m_playerLocation;
-    private Rigidbody2D m_rigdboby;
-    public MONSTERSTATE m_state;
     //private bool m_isFacedBack = false;
-
-    MobController mobController;
-    private DetectRange detectRange;
-    private Script_Testmob_AttackRange attackRange;
-    private Script_TestMob_Sprite sprite;
+    //      자식들 변수입니다.
+    [SerializeField] private Rigidbody2D m_rigdboby;
+    [SerializeField] MobController mobController;
+    [SerializeField] private DetectRange detectRange;
+    [SerializeField] private Script_Testmob_AttackRange attackRange;
+    [SerializeField] private Script_TestMob_Sprite sprite;
+    //      핵심 기능들입니다.
     void Awake()
     {
         m_state = MONSTERSTATE.IDLE;
@@ -37,6 +39,7 @@ public class Monster : MonoBehaviour
     }
     void Start()
     {
+        hp = maxHp;
         speed = standardSpeed;
 
         mobController = GetComponentInParent<MobController>();
@@ -49,7 +52,6 @@ public class Monster : MonoBehaviour
 
         StartCoroutine(MonsterUpdate());
     }
-
     void Update()
     {
     }
@@ -69,6 +71,8 @@ public class Monster : MonoBehaviour
         }
     }
 
+    // =====
+    //      현재 상태와 관련된 함수들.
     private void DecideState()
     {
         // 안죽었을 경우에만 상태 재정의.
@@ -117,26 +121,18 @@ public class Monster : MonoBehaviour
                 }
         }
     }
-
-
-
-    // mob controller에서 작동하면 플레이어의 위치를 가져옵니다.
-    // 모든 몬스터 개체에서 플레이어 위치를 구하는 것 보다는 효율적일 것이라 생각했었습니다.
-    // 아무튼 위치를 가져오면 다음 이동 방향을 플레이어 방향으로 재설정 합니다.
-
-    // 그냥 평상시
+    // 대기상태
     void StateIDLE()
     {
         ResetVelocity();
     }
-    // 플레이어 감지, 추격.
+    // 플레이어 감지, 추격,이동 상태.
     void StateChase()
     {
         //SetIsFacedBack();
 
         Move();
     }
-
     void StateAttack()
     {
         ResetVelocity();
@@ -146,7 +142,24 @@ public class Monster : MonoBehaviour
         mobController.RemoveMonster(this);
         Destroy(gameObject);    // 컴포넌트가 터져서 죽습니다. 터져서 없어짐 수고요.
     }
-    public void Move()
+     private void SetStateToIDLE()
+    {
+        m_state = MONSTERSTATE.IDLE;
+    }
+    private void SetStateToChase()
+    {
+        m_state = MONSTERSTATE.CHASE;
+    }
+    private void SetStateToAttack()
+    {
+        m_state = MONSTERSTATE.ATTACK;
+    }
+    private void SetStateToDead()
+    {
+        m_state = MONSTERSTATE.DEAD;
+    }  
+    //      기하와 관련된 함수.
+    private void Move()
     {
         m_rigdboby.MovePosition(m_rigdboby.position + (Vector2)m_direction * speed * Time.fixedDeltaTime);
     }
@@ -154,17 +167,6 @@ public class Monster : MonoBehaviour
     {
         m_rigdboby.velocity = Vector3.zero;
     }
-    //void SetIsFacedBack()
-    //{
-    //    if (0 > m_direction.x)
-    //    {
-    //        m_isFacedBack = true;
-    //    }
-    //    else
-    //    {
-    //        m_isFacedBack = false;
-    //    }
-    //}
     // 플레이어 위치를 받으면 그 쪽으로 방향을 설정하는 메서드?
     void SetDirectionToPlayer(Vector3 playerLocation)
     {
@@ -173,37 +175,27 @@ public class Monster : MonoBehaviour
         m_direction = (gap).normalized;
 
         sprite.SetSpriteDirection(gap.x);
-        
     }
+    //      체력, 속도 등의 수치를 제어하는 함수.
+    // '공격당했을 때'
+    // 사망 여부를 반환합니다.
 
-
-   public void SetStateToIDLE()
-    {
-       // Debug.Log("State : IDLE");
-        m_state = MONSTERSTATE.IDLE;
-    }
-    public void SetStateToChase()
-    {
-      //  Debug.Log("State : Chase");
-
-        m_state = MONSTERSTATE.CHASE;
-    }
-    public void SetStateToAttack()
+    private float WhenDamaged(float damage)
     {
 
-       // Debug.Log("State : Attack");
-
-        m_state = MONSTERSTATE.ATTACK;
     }
-    public void SetStateToDead()
-    {
-       // Debug.Log("State : Dead");
 
-        m_state = MONSTERSTATE.DEAD;
-    }  
+    //      이 개체와 그 자식에서는 쓰이지 않는 함수.
     public void HandlePlayerLocation(Vector3 targetPosition)
     {
         SetDirectionToPlayer(targetPosition);
     }
-
+    public bool WhenHit(float damage)
+    {
+        // 나중에 그림자 같은 이유로 피격되지 않을 수 있으니...
+        if (true)
+        {
+            WhenDamaged(damage);
+        }
+    }
 }

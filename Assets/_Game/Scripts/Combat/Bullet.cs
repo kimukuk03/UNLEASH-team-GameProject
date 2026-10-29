@@ -4,6 +4,7 @@ public class Bullet : MonoBehaviour
 {
     [SerializeField] private float speed = 12f;
     [SerializeField] private float lifeTime = 2f;
+    [SerializeField] private float damage = 7f;
 
     private void Start()
     {
@@ -13,5 +14,9 @@ public class Bullet : MonoBehaviour
     private void Update()
     {
         transform.Translate(Vector2.right * speed * Time.deltaTime);
+    }
+    public float GetDamage()
+    {
+        return damage;
     }
 }

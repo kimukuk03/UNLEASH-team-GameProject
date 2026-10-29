@@ -9,7 +9,7 @@ public class Script_TestMob_Sprite : MonoBehaviour
     public Sprite[] spriteMove;
     public Sprite[] spriteAttack;
     public Sprite[] spriteDead;
-    public float updateDelay = 1.0f;
+    public float updateDelay = 0.1f;
 
     private MONSTERSTATE currentAnimation = MONSTERSTATE.IDLE;
     private int currentFrame = 0;
@@ -98,12 +98,4 @@ public class Script_TestMob_Sprite : MonoBehaviour
             spriteRenderer.flipX = true;
         }
     }
-
-
-
-    //public void SpriteFlipX()
-    //{
-    //    isFacingBack = !isFacingBack;
-    //    spriteRenderer.flipX = isFacingBack;
-    //}
 }

@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Script_TestMob_Rigdbody : MonoBehaviour
 {
-    private Rigidbody2D m_rigdollBody2D;
+    [SerializeField] private Rigidbody2D m_rigdollBody2D;
     private Monster parent;
     // Start is called before the first frame update
     void Start()
@@ -19,6 +19,14 @@ public class Script_TestMob_Rigdbody : MonoBehaviour
     void Update()
     {
         
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Bullet"))
+        {
+            parent.
+        }
     }
 
 }

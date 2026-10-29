@@ -408,6 +408,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f1643ce003ea31c48805a6929a8f3090, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_rigdollBody2D: {fileID: 0}
 --- !u!58 &1083683620
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -513,6 +514,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 568001273717090755, guid: 1f1686f61e5c3e44388194c1b079ce26, type: 3}
+      propertyPath: updateDelay
+      value: 0.01
+      objectReference: {fileID: 0}
+    - target: {fileID: 568001273717090755, guid: 1f1686f61e5c3e44388194c1b079ce26, type: 3}
+      propertyPath: standardSpeed
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 2601492242768158494, guid: 1f1686f61e5c3e44388194c1b079ce26, type: 3}
       propertyPath: m_LocalPosition.x
       value: 1.4659457
@@ -555,11 +564,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2809815876242805592, guid: 1f1686f61e5c3e44388194c1b079ce26, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.18
+      value: 0.04
       objectReference: {fileID: 0}
     - target: {fileID: 2809815876242805592, guid: 1f1686f61e5c3e44388194c1b079ce26, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -1.03
+      value: -1.13
       objectReference: {fileID: 0}
     - target: {fileID: 8287893568324655338, guid: 1f1686f61e5c3e44388194c1b079ce26, type: 3}
       propertyPath: spriteDead
