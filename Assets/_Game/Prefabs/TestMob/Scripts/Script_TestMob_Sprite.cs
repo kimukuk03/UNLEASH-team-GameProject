@@ -45,7 +45,7 @@ public class Script_TestMob_Sprite : MonoBehaviour
     {
         spriteRenderer.sprite = newSprite;
     }
-    private void SpriteChangeByState()
+    public void SpriteChangeByState()
     {
         switch (parent.m_state)
         {
@@ -97,5 +97,9 @@ public class Script_TestMob_Sprite : MonoBehaviour
         {
             spriteRenderer.flipX = true;
         }
+    }
+    public int GetCurrentFrame()
+    {
+        return currentFrame;
     }
 }

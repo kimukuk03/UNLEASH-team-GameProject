@@ -25,7 +25,9 @@ public class Script_TestMob_Rigdbody : MonoBehaviour
     {
         if (other.CompareTag("Bullet"))
         {
-            parent.
+            Bullet bullet = other.GetComponent<Bullet>();
+
+            parent.WhenHit(bullet.GetDamage());
         }
     }
 
