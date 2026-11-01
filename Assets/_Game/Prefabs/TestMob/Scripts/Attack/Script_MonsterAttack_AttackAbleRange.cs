@@ -2,10 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Script_MonsterAttack_AttackRange : MonoBehaviour
+public class Script_MonsterAttack_AttackAbleRange : MonoBehaviour
 {
     private Script_Monster parent;
-    private bool isPlayerInAttackRange = false;
+    private bool isPlayerInAttackAbleRange = false;
     // Start is called before the first frame update
     void Start()
     {
@@ -15,19 +15,19 @@ public class Script_MonsterAttack_AttackRange : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            isPlayerInAttackRange = true;
+            isPlayerInAttackAbleRange = true;
         }
     }
     private void OnTriggerExit2D(Collider2D other)
     {
         if (other.CompareTag("Player"))
         {
-            isPlayerInAttackRange = false;
+            isPlayerInAttackAbleRange = false;
         }
     }
 
-    public bool GetIsPlayerInAttackRange()
+    public bool GetIsPlayerInDetectRange()
     {
-        return isPlayerInAttackRange;
+        return isPlayerInAttackAbleRange;
     }
 }

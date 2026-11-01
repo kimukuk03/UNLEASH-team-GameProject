@@ -378,6 +378,7 @@ GameObject:
   m_Component:
   - component: {fileID: 769219805}
   - component: {fileID: 769219806}
+  - component: {fileID: 769219807}
   m_Layer: 3
   m_Name: AttackRange
   m_TagString: Untagged
@@ -435,6 +436,18 @@ CircleCollider2D:
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
   m_Radius: 0.5
+--- !u!114 &769219807
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 769219804}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb11b593153a6e04b866810e1b6626ea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &142977950208316537
 Transform:
   m_ObjectHideFlags: 0
@@ -866,11 +879,11 @@ MonoBehaviour:
   standardSpeed: 3
   m_state: 0
   updateDelay: 0.01
-  mobController: {fileID: 0}
+  m_mobController: {fileID: 0}
   m_rigdboby: {fileID: 0}
-  detectRange: {fileID: 0}
-  attackRange: {fileID: 0}
-  sprite: {fileID: 0}
+  m_detectRange: {fileID: 0}
+  m_monsterAttack: {fileID: 0}
+  m_sprite: {fileID: 0}
   m_audio: {fileID: 0}
 --- !u!212 &4397033406962898134
 SpriteRenderer:
@@ -879,7 +892,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4745589307399432512}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1

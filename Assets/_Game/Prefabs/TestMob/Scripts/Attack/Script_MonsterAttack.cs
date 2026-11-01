@@ -17,7 +17,7 @@ public class Script_MonsterAttack : MonoBehaviour
     private Script_Monster m_parent;
     // ÀÚ½Ä
     private Script_MonsterAttack_Effect m_effect;
-    private Script_MonsterAttack_AttackRange m_attackRange;
+    private Script_MonsterAttack_AttackAbleRange m_attackRange;
 
 
     // Start is called before the first frame update
@@ -26,7 +26,7 @@ public class Script_MonsterAttack : MonoBehaviour
         m_parent = GetComponentInParent<Script_Monster>();
         
         m_effect = GetComponentInChildren<Script_MonsterAttack_Effect>(); ;
-        m_attackRange = GetComponentInChildren<Script_MonsterAttack_AttackRange>();
+        m_attackRange = GetComponentInChildren<Script_MonsterAttack_AttackAbleRange>();
     }
     public void Attack()
     { 

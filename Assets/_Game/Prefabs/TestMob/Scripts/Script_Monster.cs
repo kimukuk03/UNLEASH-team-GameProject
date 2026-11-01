@@ -48,7 +48,7 @@ public class Script_Monster : MonoBehaviour
         m_monsterAttack = GetComponentInChildren<Script_MonsterAttack>();
         m_sprite = GetComponentInChildren<Script_Monster_Sprite>();
         m_audio = GetComponentInChildren<Script_Monster_Audio>();
-
+        
         StartCoroutine(MonsterUpdate());
     }
     void Update()
@@ -99,6 +99,8 @@ public class Script_Monster : MonoBehaviour
     }
     private void ActionByState()
     {
+        MONSTERSTATE m_foreState = m_state;
+
         switch (m_state)
         {
             case (MONSTERSTATE.IDLE):
@@ -122,6 +124,30 @@ public class Script_Monster : MonoBehaviour
                     break;
                 }
         }
+        if(m_state != m_foreState)
+        {
+            switch (m_foreState)
+            {
+                case (MONSTERSTATE.IDLE):
+                    {
+                       
+                        break;
+                    }
+                case (MONSTERSTATE.CHASE):
+                    {
+                        
+                        break;
+                    }
+                case (MONSTERSTATE.ATTACK):
+                    {
+                        if (!m_sprite.gameObject.activeSelf)
+                        {
+                            m_sprite.gameObject.SetActive(true);
+                        }
+                        break;
+                    }
+            }
+        }
     }
     void StateIDLE()
     {   
@@ -137,9 +163,9 @@ public class Script_Monster : MonoBehaviour
     {
         ResetVelocity();
 
-        if(gameObject.activeSelf)
+        if(m_sprite.gameObject.activeSelf)
         {
-
+            m_sprite.gameObject.SetActive(false);
         }
 
         m_monsterAttack.Attack();
@@ -148,7 +174,6 @@ public class Script_Monster : MonoBehaviour
     {
         m_mobController.RemoveMonster(this);
 
-        m_audio.PlaySound(m_audio.audioDead);
         Destroy(gameObject);    // 컴포넌트가 터져서 죽습니다. 터져서 없어짐 수고요.
     }
      private void SetStateToIDLE()
