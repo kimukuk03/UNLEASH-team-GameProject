@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class Script_Effect : MonoBehaviour
+public class Script_MonsterAttack_Effect : MonoBehaviour
 {
     public Sprite[] spriteEffect;
     public float updateDelay = 0.1f;

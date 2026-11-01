@@ -7,7 +7,7 @@ using UnityEngine;
 
 
 
-public class Monster : MonoBehaviour
+public class Script_Monster : MonoBehaviour
 {
     [SerializeField] private bool doDebugMessage = false;
 
@@ -22,13 +22,13 @@ public class Monster : MonoBehaviour
     // update 간격이라고 생각하시면 됩니다.
     public float updateDelay = 0.1f;
     // 부모 몹 통제자입니다. 솔직히 여기서는 잘 안쓰는 것 같습니다. 
-    [SerializeField] private MobController mobController;
+    [SerializeField] private Script_MobController m_mobController;
     // 자식들 변수입니다.
     [SerializeField] private Rigidbody2D m_rigdboby;
-    [SerializeField] private DetectRange detectRange;
-    [SerializeField] private Script_Testmob_AttackRange attackRange;
-    [SerializeField] private Script_TestMob_Sprite sprite;
-    [SerializeField] private Script_AudioManager m_audio;
+    [SerializeField] private Script_Monster_DetectRange m_detectRange;
+    [SerializeField] private Script_MonsterAttack m_monsterAttack;
+    [SerializeField] private Script_Monster_Sprite m_sprite;
+    [SerializeField] private Script_Monster_Audio m_audio;
     //  핵심 기능들입니다.
     void Awake()
     {
@@ -40,14 +40,14 @@ public class Monster : MonoBehaviour
         m_hp = maxHp;
         speed = standardSpeed;
 
-        mobController = GetComponentInParent<MobController>();
-        mobController.AddMonster(this);
+        m_mobController = GetComponentInParent<Script_MobController>();
+        m_mobController.AddMonster(this);
 
         m_rigdboby = GetComponent<Rigidbody2D>();
-        detectRange = GetComponentInChildren<DetectRange>();
-        attackRange = GetComponentInChildren<Script_Testmob_AttackRange>();
-        sprite = GetComponentInChildren<Script_TestMob_Sprite>();
-        m_audio = GetComponentInChildren<Script_AudioManager>();
+        m_detectRange = GetComponentInChildren<Script_Monster_DetectRange>();
+        m_monsterAttack = GetComponentInChildren<Script_MonsterAttack>();
+        m_sprite = GetComponentInChildren<Script_Monster_Sprite>();
+        m_audio = GetComponentInChildren<Script_Monster_Audio>();
 
         StartCoroutine(MonsterUpdate());
     }
@@ -83,11 +83,11 @@ public class Monster : MonoBehaviour
         }
         else
         {
-            if (attackRange.GetIsPlayerInAttackRange())
+            if (m_monsterAttack.GetIsTargetInrange())
             {
                 this.SetStateToAttack();
             }
-            else if (detectRange.GetIsPlayerInDetectRange())
+            else if (m_detectRange.GetIsPlayerInDetectRange())
             {
                 this.SetStateToChase();
             }
@@ -136,15 +136,17 @@ public class Monster : MonoBehaviour
     void StateAttack()
     {
         ResetVelocity();
-    
-        if (sprite.GetCurrentFrame() == 1)
+
+        if(gameObject.activeSelf)
         {
-            m_audio.PlaySound(m_audio.audioAttack);
+
         }
+
+        m_monsterAttack.Attack();
     }
     void StateDead()
     {
-        mobController.RemoveMonster(this);
+        m_mobController.RemoveMonster(this);
 
         m_audio.PlaySound(m_audio.audioDead);
         Destroy(gameObject);    // 컴포넌트가 터져서 죽습니다. 터져서 없어짐 수고요.
@@ -181,7 +183,7 @@ public class Monster : MonoBehaviour
 
         m_direction = (gap).normalized;
 
-        sprite.SetSpriteDirection(gap.x);
+        m_sprite.SetSpriteDirection(gap.x);
     }
     //  체력, 속도 등의 수치를 제어하는 함수들.
     private void WhenDamaged(float damage)

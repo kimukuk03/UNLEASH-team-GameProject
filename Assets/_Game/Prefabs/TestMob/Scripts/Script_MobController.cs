@@ -4,13 +4,13 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class MobController : MonoBehaviour
+public class Script_MobController : MonoBehaviour
 {
     //public float firstRepeatDelay = 0.0f;
     public float updateDelay = 0.1f;
     
     private GameObject player;
-    private List<Monster> monsters = new();
+    private List<Script_Monster> monsters = new();
 
 
 
@@ -35,11 +35,11 @@ public class MobController : MonoBehaviour
             yield return new WaitForSeconds(updateDelay);
         }
     }
-    public void AddMonster(Monster monster)
+    public void AddMonster(Script_Monster monster)
     {
         monsters.Add(monster);
     }
-    public void RemoveMonster(Monster monster)
+    public void RemoveMonster(Script_Monster monster)
     {
         monsters.Remove(monster);
     }
@@ -53,7 +53,7 @@ public class MobController : MonoBehaviour
     {
         Vector3 targetPosition = GetPlayerPosition();
 
-        foreach (Monster monster in monsters)
+        foreach (Script_Monster monster in monsters)
         {
             if (monster.m_state != MONSTERSTATE.IDLE)
             {

@@ -2,12 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Script_AudioManager : MonoBehaviour
+public class Script_Monster_Audio : MonoBehaviour
 {
     
     [SerializeField] public AudioClip audioAttack;
     [SerializeField] public AudioClip audioDead;
-    private float testTime = 0;
     private AudioSource audioSource;
 
     // Start is called before the first frame update

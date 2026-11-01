@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class Script_TestMob_Sprite : MonoBehaviour
+public class Script_Monster_Sprite : MonoBehaviour
 {
     public Sprite[] spriteIdle;
     public Sprite[] spriteMove;
@@ -15,14 +15,14 @@ public class Script_TestMob_Sprite : MonoBehaviour
     private int currentFrame = 0;
 
     private SpriteRenderer spriteRenderer;
-    private Monster parent = null;
+    private Script_Monster parent = null;
 
     // Start is called before the first frame update
     void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
 
-        parent = GetComponentInParent<Monster>();
+        parent = GetComponentInParent<Script_Monster>();
 
         StartCoroutine(SpriteUpdate());
     }
@@ -59,11 +59,12 @@ public class Script_TestMob_Sprite : MonoBehaviour
                     SetAnimation(MONSTERSTATE.CHASE,spriteMove);
                     break;
                 }
-            case (MONSTERSTATE.ATTACK):
-                {
-                    SetAnimation(MONSTERSTATE.ATTACK,spriteAttack);
-                    break;
-                }
+            //case (MONSTERSTATE.ATTACK):
+            //    {
+     
+            //        SetAnimation(MONSTERSTATE.ATTACK,spriteAttack);
+            //        break;
+            //    }
             default:
                 {
                     break;
