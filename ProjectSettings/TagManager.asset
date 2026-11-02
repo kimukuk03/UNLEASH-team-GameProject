@@ -47,6 +47,9 @@ TagManager:
   - name: Environment
     uniqueID: 1589248551
     locked: 0
+  - name: Monster
+    uniqueID: 1367484137
+    locked: 0
   - name: Player
     uniqueID: 420073451
     locked: 0

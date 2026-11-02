@@ -13,7 +13,15 @@ public class Bullet : MonoBehaviour
 
 
     /* 충돌한 오브젝트 코드가 "Monster"면 로그 출력하고 삭제되는 코드 */
-    private void OnCollisionEnter2D(Collision2D collision)
+    //private void OnCollisionEnter2D(Collision2D collision)
+    //{
+    //    if (collision.gameObject.CompareTag("Monster"))
+    //    {
+    //        Debug.Log("Hit!");      // 디버그용 로그 출력
+    //        Destroy(gameObject);    // 오브젝트 삭제
+    //    }
+    //}
+    private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.gameObject.CompareTag("Monster"))
         {
@@ -21,7 +29,6 @@ public class Bullet : MonoBehaviour
             Destroy(gameObject);    // 오브젝트 삭제
         }
     }
-
 
     private void Update()
     {
