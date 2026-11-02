@@ -83,7 +83,7 @@ public class Script_Monster : MonoBehaviour
         }
         else
         {
-            if (m_monsterAttack.GetIsTargetInrange())
+            if (m_monsterAttack.GetIsTargetInAttackAblerange())
             {
                 this.SetStateToAttack();
             }
