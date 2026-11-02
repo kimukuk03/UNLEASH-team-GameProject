@@ -6,6 +6,7 @@ public class PlayerAim : MonoBehaviour
 {
     [SerializeField] private Transform weaponPivot;
     [SerializeField] private SpriteRenderer weaponSprite;
+    [SerializeField] private GameObject muzzlePoint;
 
     private void Update()
     {
@@ -21,10 +22,13 @@ public class PlayerAim : MonoBehaviour
         if (direction.x < 0f)
         {
             weaponSprite.flipY = true;
+            muzzlePoint.transform.localScale = new Vector3(1, -1, 1);
         }
         else
         {
             weaponSprite.flipY = false;
+            muzzlePoint.transform.localScale = new Vector3(1, 1, 1);
+
         }
     }
 }
