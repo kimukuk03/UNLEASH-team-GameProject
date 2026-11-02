@@ -7,7 +7,7 @@ using UnityEngine;
 
 
 
-public class Script_Monster : MonoBehaviour
+public class Monster : MonoBehaviour
 {
     [SerializeField] private bool doDebugMessage = false;
 
@@ -22,13 +22,13 @@ public class Script_Monster : MonoBehaviour
     // update 간격이라고 생각하시면 됩니다.
     public float updateDelay = 0.1f;
     // 부모 몹 통제자입니다. 솔직히 여기서는 잘 안쓰는 것 같습니다. 
-    [SerializeField] private Script_MobController m_mobController;
+    [SerializeField] private MobController mobController;
     // 자식들 변수입니다.
     [SerializeField] private Rigidbody2D m_rigdboby;
-    [SerializeField] private Script_Monster_DetectRange m_detectRange;
-    [SerializeField] private Script_MonsterAttack m_monsterAttack;
-    [SerializeField] private Script_Monster_Sprite m_sprite;
-    [SerializeField] private Script_Monster_Audio m_audio;
+    [SerializeField] private DetectRange detectRange;
+    [SerializeField] private Script_Testmob_AttackRange attackRange;
+    [SerializeField] private Script_TestMob_Sprite sprite;
+    [SerializeField] private Script_AudioManager m_audio;
     //  핵심 기능들입니다.
     void Awake()
     {
@@ -40,15 +40,15 @@ public class Script_Monster : MonoBehaviour
         m_hp = maxHp;
         speed = standardSpeed;
 
-        m_mobController = GetComponentInParent<Script_MobController>();
-        m_mobController.AddMonster(this);
+        mobController = GetComponentInParent<MobController>();
+        mobController.AddMonster(this);
 
         m_rigdboby = GetComponent<Rigidbody2D>();
-        m_detectRange = GetComponentInChildren<Script_Monster_DetectRange>();
-        m_monsterAttack = GetComponentInChildren<Script_MonsterAttack>();
-        m_sprite = GetComponentInChildren<Script_Monster_Sprite>();
-        m_audio = GetComponentInChildren<Script_Monster_Audio>();
-        
+        detectRange = GetComponentInChildren<DetectRange>();
+        attackRange = GetComponentInChildren<Script_Testmob_AttackRange>();
+        sprite = GetComponentInChildren<Script_TestMob_Sprite>();
+        m_audio = GetComponentInChildren<Script_AudioManager>();
+
         StartCoroutine(MonsterUpdate());
     }
     void Update()
@@ -83,11 +83,11 @@ public class Script_Monster : MonoBehaviour
         }
         else
         {
-            if (m_monsterAttack.GetIsTargetInAttackAblerange())
+            if (attackRange.GetIsPlayerInAttackRange())
             {
                 this.SetStateToAttack();
             }
-            else if (m_detectRange.GetIsPlayerInDetectRange())
+            else if (detectRange.GetIsPlayerInDetectRange())
             {
                 this.SetStateToChase();
             }
@@ -99,8 +99,6 @@ public class Script_Monster : MonoBehaviour
     }
     private void ActionByState()
     {
-        MONSTERSTATE m_foreState = m_state;
-
         switch (m_state)
         {
             case (MONSTERSTATE.IDLE):
@@ -124,30 +122,6 @@ public class Script_Monster : MonoBehaviour
                     break;
                 }
         }
-        if(m_state != m_foreState)
-        {
-            switch (m_foreState)
-            {
-                case (MONSTERSTATE.IDLE):
-                    {
-                       
-                        break;
-                    }
-                case (MONSTERSTATE.CHASE):
-                    {
-                        
-                        break;
-                    }
-                case (MONSTERSTATE.ATTACK):
-                    {
-                        if (!m_sprite.gameObject.activeSelf)
-                        {
-                            m_sprite.gameObject.SetActive(true);
-                        }
-                        break;
-                    }
-            }
-        }
     }
     void StateIDLE()
     {   
@@ -162,18 +136,17 @@ public class Script_Monster : MonoBehaviour
     void StateAttack()
     {
         ResetVelocity();
-
-        if(m_sprite.gameObject.activeSelf)
+    
+        if (sprite.GetCurrentFrame() == 1)
         {
-            m_sprite.gameObject.SetActive(false);
+            m_audio.PlaySound(m_audio.audioAttack);
         }
-
-        m_monsterAttack.Attack();
     }
     void StateDead()
     {
-        m_mobController.RemoveMonster(this);
+        mobController.RemoveMonster(this);
 
+        m_audio.PlaySound(m_audio.audioDead);
         Destroy(gameObject);    // 컴포넌트가 터져서 죽습니다. 터져서 없어짐 수고요.
     }
      private void SetStateToIDLE()
@@ -208,7 +181,7 @@ public class Script_Monster : MonoBehaviour
 
         m_direction = (gap).normalized;
 
-        m_sprite.SetSpriteDirection(gap.x);
+        sprite.SetSpriteDirection(gap.x);
     }
     //  체력, 속도 등의 수치를 제어하는 함수들.
     private void WhenDamaged(float damage)

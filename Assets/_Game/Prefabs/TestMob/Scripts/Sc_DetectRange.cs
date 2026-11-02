@@ -2,14 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Script_Monster_DetectRange : MonoBehaviour
+public class DetectRange : MonoBehaviour
 {
-    private Script_Monster parent; 
+    private Monster parent; 
     private bool isPlayerInDetectRange = false;
     // Start is called before the first frame update
     void Start()
     {
-        parent = GetComponentInParent<Script_Monster>();
+        parent = GetComponentInParent<Monster>();
     }
 
     //// Update is called once per frame

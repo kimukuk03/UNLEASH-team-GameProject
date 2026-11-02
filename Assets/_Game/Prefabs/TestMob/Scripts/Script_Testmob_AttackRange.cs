@@ -2,32 +2,32 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Script_MonsterAttack_AttackAbleRange : MonoBehaviour
+public class Script_Testmob_AttackRange : MonoBehaviour
 {
-    private Script_Monster parent;
-    private bool isPlayerInAttackAbleRange = false;
+    private Monster parent;
+    private bool isPlayerInAttackRange = false;
     // Start is called before the first frame update
     void Start()
     {
-        parent = GetComponentInParent<Script_Monster>();
+        parent = GetComponentInParent<Monster>();
     }
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Player"))
         {
-            isPlayerInAttackAbleRange = true;
+            isPlayerInAttackRange = true;
         }
     }
     private void OnTriggerExit2D(Collider2D other)
     {
         if (other.CompareTag("Player"))
         {
-            isPlayerInAttackAbleRange = false;
+            isPlayerInAttackRange = false;
         }
     }
 
-    public bool GetIsPlayerInDetectRange()
+    public bool GetIsPlayerInAttackRange()
     {
-        return isPlayerInAttackAbleRange;
+        return isPlayerInAttackRange;
     }
 }
