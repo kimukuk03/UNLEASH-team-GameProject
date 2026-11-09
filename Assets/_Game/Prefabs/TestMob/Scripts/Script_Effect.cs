@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -13,13 +14,20 @@ public class Script_Effect : MonoBehaviour
     private SpriteRenderer spriteRenderer;
 
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
 
         StartCoroutine(SpriteUpdate());
 
 
+    }
+    void Update()
+    {
+        if(spriteEffect.Length == currentFrame + 1)
+        {
+            Destroy(this.gameObject);
+        }
     }
 
     IEnumerator SpriteUpdate()
@@ -56,5 +64,10 @@ public class Script_Effect : MonoBehaviour
         {
             spriteRenderer.flipX = true;
         }
+    }
+
+    public int GetCurrentFrame()
+    {
+        return currentFrame;
     }
 }

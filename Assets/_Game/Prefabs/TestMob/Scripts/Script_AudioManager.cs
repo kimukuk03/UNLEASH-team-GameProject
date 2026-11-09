@@ -5,13 +5,12 @@ using UnityEngine;
 public class Script_AudioManager : MonoBehaviour
 {
     
-    [SerializeField] public AudioClip audioAttack;
-    [SerializeField] public AudioClip audioDead;
-    private float testTime = 0;
+    [SerializeField] public AudioClip m_audio;
     private AudioSource audioSource;
-
+    private bool m_isPlaying = false;
+    private int playCount = 0;
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         audioSource = GetComponent<AudioSource>();
     }
@@ -19,12 +18,20 @@ public class Script_AudioManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-    }
-    public void PlaySound(AudioClip targetAudio)
-    {
-        if (targetAudio)
+        if (!m_isPlaying && 0 == playCount)
         {
-            audioSource.PlayOneShot(targetAudio);
+            PlaySound();
+            m_isPlaying = true;
+        }
+
+        
+    }
+    public void PlaySound()
+    {
+        if (m_audio)
+        {
+            audioSource.PlayOneShot(m_audio);
+            ++playCount;
         }
     }
 }

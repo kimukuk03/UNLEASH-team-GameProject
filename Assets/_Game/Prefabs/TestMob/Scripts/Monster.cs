@@ -143,8 +143,6 @@ public class Monster : MonoBehaviour
 
         if ((sprite.m_stateChanged|| sprite.GetCurrentFrame() ==0) && !m_firedBullet)
         {
-            m_audio.PlaySound(m_audio.audioAttack);
-
             m_firedBullet= Instantiate(    m_bullet,    m_muzzle.transform.position,    m_muzzle.transform.rotation);
         }
     }
@@ -152,7 +150,6 @@ public class Monster : MonoBehaviour
     {
         mobController.RemoveMonster(this);
 
-        m_audio.PlaySound(m_audio.audioDead);
         Destroy(gameObject);    // 컴포넌트가 터져서 죽습니다. 터져서 없어짐 수고요.
     }
      private void SetStateToIDLE()
