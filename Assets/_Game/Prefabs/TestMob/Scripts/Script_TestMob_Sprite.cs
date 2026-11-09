@@ -9,10 +9,11 @@ public class Script_TestMob_Sprite : MonoBehaviour
     public Sprite[] spriteMove;
     public Sprite[] spriteAttack;
     public Sprite[] spriteDead;
-    public float updateDelay = 0.1f;
+    public float frameUpdateDelay = 0.1f;
 
     private MONSTERSTATE currentAnimation = MONSTERSTATE.IDLE;
     private int currentFrame = 0;
+    public bool m_stateChanged=false;
 
     private SpriteRenderer spriteRenderer;
     private Monster parent = null;
@@ -37,7 +38,7 @@ public class Script_TestMob_Sprite : MonoBehaviour
         {
             SpriteChangeByState();
 
-            yield return new WaitForSeconds(updateDelay);
+            yield return new WaitForSeconds(frameUpdateDelay);
         }
     }
     
@@ -76,10 +77,12 @@ public class Script_TestMob_Sprite : MonoBehaviour
         {
             currentAnimation = targetState;
             currentFrame = 0;
+            m_stateChanged = true;
         }
         else
         {
             currentFrame = (currentFrame + 1) % targetAnimation.Length;
+            m_stateChanged = false;
         }
 
         SpriteChange(targetAnimation[currentFrame]);

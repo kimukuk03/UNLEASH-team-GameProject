@@ -13,12 +13,14 @@ public class Monster : MonoBehaviour
 
     [SerializeField] protected float maxHp = 100f;
     [SerializeField] private float m_hp;
+    [SerializeField] private GameObject m_bullet; // 여기에 공격 투사체, 프리펩을 넣으면 됩니다.
     // 각종 기하 관련 변수입니다.
     public Vector3 m_direction;
     public float standardSpeed = 3f;   
     private float speed;
     // 현재 상태에 따라 각종 행동이 제어됩니다.
     public MONSTERSTATE m_state;
+    private GameObject m_firedBullet = null;
     // update 간격이라고 생각하시면 됩니다.
     public float updateDelay = 0.1f;
     // 부모 몹 통제자입니다. 솔직히 여기서는 잘 안쓰는 것 같습니다. 
@@ -29,7 +31,8 @@ public class Monster : MonoBehaviour
     [SerializeField] private Script_Testmob_AttackRange attackRange;
     [SerializeField] private Script_TestMob_Sprite sprite;
     [SerializeField] private Script_AudioManager m_audio;
-    //  핵심 기능들입니다.
+    [SerializeField] private Script_Muzzle m_muzzle;
+    //  핵심 함수들입니다.
     void Awake()
     {
         m_state = MONSTERSTATE.IDLE;
@@ -48,6 +51,7 @@ public class Monster : MonoBehaviour
         attackRange = GetComponentInChildren<Script_Testmob_AttackRange>();
         sprite = GetComponentInChildren<Script_TestMob_Sprite>();
         m_audio = GetComponentInChildren<Script_AudioManager>();
+        m_muzzle = GetComponentInChildren<Script_Muzzle>();
 
         StartCoroutine(MonsterUpdate());
     }
@@ -83,7 +87,7 @@ public class Monster : MonoBehaviour
         }
         else
         {
-            if (attackRange.GetIsPlayerInAttackRange())
+            if (attackRange.GetIsPlayerInAttackRange() && m_bullet)
             {
                 this.SetStateToAttack();
             }
@@ -136,10 +140,12 @@ public class Monster : MonoBehaviour
     void StateAttack()
     {
         ResetVelocity();
-    
-        if (sprite.GetCurrentFrame() == 1)
+
+        if ((sprite.m_stateChanged|| sprite.GetCurrentFrame() ==0) && !m_firedBullet)
         {
             m_audio.PlaySound(m_audio.audioAttack);
+
+            m_firedBullet= Instantiate(    m_bullet,    m_muzzle.transform.position,    m_muzzle.transform.rotation);
         }
     }
     void StateDead()
