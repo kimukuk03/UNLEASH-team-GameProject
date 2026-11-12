@@ -46,7 +46,7 @@ public class Script_TestMob_Sprite : MonoBehaviour
 
     private void ShiledVisualize()
     {
-        if(parent)
+        //if(parent)
     }
     private void SpriteChange(Sprite newSprite)
     {
