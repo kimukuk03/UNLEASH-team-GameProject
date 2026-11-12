@@ -13,6 +13,8 @@ public class Monster : MonoBehaviour
 
     [SerializeField] protected float maxHp = 100f;
     [SerializeField] private float m_hp;
+    [SerializeField] private float m_shiledMax= 100f;
+    [SerializeField] private float m_shiled;
     [SerializeField] private GameObject m_bullet; // 여기에 공격 투사체, 프리펩을 넣으면 됩니다.
     // 각종 기하 관련 변수입니다.
     public Vector3 m_direction;
@@ -41,6 +43,7 @@ public class Monster : MonoBehaviour
     void Start()
     {
         m_hp = maxHp;
+        m_shiled = m_shiledMax;
         speed = standardSpeed;
 
         mobController = GetComponentInParent<MobController>();
@@ -217,7 +220,7 @@ public class Monster : MonoBehaviour
     {
         // 나중에 그림자 같은 이유로 피격되지 않을 수 있으니...
         // 일단 이거 작성일 기준으로는 가지 않는 경로가 있다며 경고가 뜰 것입니다.
-        if (true)
+        if (m_shiled==0)
         {
             WhenDamaged(damage);
 
@@ -226,6 +229,7 @@ public class Monster : MonoBehaviour
         else
         {
             // 회피나 면역 같은 경우
+            DebugMessage("감나빗!");
             return false;
         }
     }

@@ -36,12 +36,18 @@ public class Script_TestMob_Sprite : MonoBehaviour
     {
         while (true)
         {
+            
+
             SpriteChangeByState();
 
             yield return new WaitForSeconds(frameUpdateDelay);
         }
     }
-    
+
+    private void ShiledVisualize()
+    {
+        if(parent)
+    }
     private void SpriteChange(Sprite newSprite)
     {
         spriteRenderer.sprite = newSprite;
