@@ -1,0 +1,48 @@
+# Unity generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Ll]ogs/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+UserSettings/
+
+# Builds
+[Bb]uild/
+[Bb]uilds/
+
+# Asset Store tools
+Assets/AssetStoreTools*
+
+# IDE / editor generated files
+.vs/
+.vscode/
+.idea/
+
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# OS generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Crash / temporary files
+sysinfo.txt
+
+# Gradle / Android temporary files
+.gradle/
+
+# Important:
+# Do NOT ignore *.meta files.
+# Unity needs .meta files to preserve GUID references.
