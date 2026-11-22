@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!221 &22100000
+AnimatorOverrideController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: LabDoor_door_reactor
+  m_Controller: {fileID: 9100000, guid: 252ac024f4dfba5458cfbf9948f8470e, type: 2}
+  m_Clips:
+  - m_OriginalClip: {fileID: 7400000, guid: fd55f2aeca996a649b9d13e27cdfe8f9, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 7afb8ceff6620e9488543f0df9a3e50f, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: b5bb4b7ea6fa13740b16de472c2372f5, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 5e3aafbbaa292f045a71f4da1795d428, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: b7c7b132a168bce4793cd9c5d6044f65, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 67e37d1b36589474f97cfff6e458a444, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: 298fc90242e1dac4fa73d0f21c560171, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 2a83f5e9bbfbe5145b45b8f930c7d1b9, type: 2}

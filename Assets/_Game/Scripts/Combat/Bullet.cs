@@ -28,6 +28,19 @@ public class Bullet : MonoBehaviour
             Debug.Log("Hit!");      // 디버그용 로그 출력
             Destroy(gameObject);    // 오브젝트 삭제
         }
+        // 벽 / 닫힌 문 / 큰 고정 구조물(Wall 레이어)에 맞으면 총알 제거 (총알 벽 관통 수정)
+        else if (IsBlocker(collision))
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    // Wall 레이어의 (트리거가 아닌) 콜라이더 = 총알을 막는 오브젝트
+    private static int wallLayer = -2;
+    private static bool IsBlocker(Collider2D col)
+    {
+        if (wallLayer == -2) wallLayer = LayerMask.NameToLayer("Wall");
+        return wallLayer >= 0 && !col.isTrigger && col.gameObject.layer == wallLayer;
     }
 
     private void Update()

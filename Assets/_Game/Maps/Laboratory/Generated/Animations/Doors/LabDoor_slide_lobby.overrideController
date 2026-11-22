@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!221 &22100000
+AnimatorOverrideController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: LabDoor_slide_lobby
+  m_Controller: {fileID: 9100000, guid: 252ac024f4dfba5458cfbf9948f8470e, type: 2}
+  m_Clips:
+  - m_OriginalClip: {fileID: 7400000, guid: fd55f2aeca996a649b9d13e27cdfe8f9, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 959bb55d3681ffc4fabd3eeff7d06aa2, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: b5bb4b7ea6fa13740b16de472c2372f5, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 95d454087ed0dee4583573329b712d63, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: b7c7b132a168bce4793cd9c5d6044f65, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 592fbcd1004024f419288647426ba651, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: 298fc90242e1dac4fa73d0f21c560171, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 60edb1101e8334f43ba367cfb5f6904a, type: 2}
