@@ -49,6 +49,15 @@ namespace Unleash.Laboratory.EditorTools
         private const int PreferredWallLayer = 8;
         private const int PPU = 16;
 
+        /// <summary>디펜스(Z9)·보스 전실(Z10)을 북쪽으로 미는 거리. 골목과 디펜스 사이에 보안실(C7, 휴식)을 넣기 위함.</summary>
+        private const int D9 = 10;
+
+        /// <summary>연구소 씬 카메라 크기 (5 → 6: 좁은 복도/대형 홀에서 주변을 더 넓게 보이게).</summary>
+        private const float CameraOrthoSize = 6f;
+
+        /// <summary>연구소 씬 플레이어 Body 스케일 (프리팹 기본 0.5 → 0.44, 화면 높이 2.0 → 1.76).</summary>
+        private const float PlayerBodyScale = 0.44f;
+
         private static readonly string[] WallSets = { "lobby", "lab", "contain", "clean", "server", "reactor" };
         private static readonly string[] DoorKinds = { "slide_lobby", "door_lab", "door_contain", "door_reactor", "shutter_reactor", "shutter_contain" };
 
@@ -722,9 +731,16 @@ namespace Unleash.Laboratory.EditorTools
         /// </summary>
         private static GameObject BuildLabMobVariant()
         {
+            // 이미 있는 LabMob 은 절대 다시 만들지 않는다.
+            // (M2 외형: Sprite/M2Visual + LabMobDirectionalSprite 가 프리팹에 직접 적용되어 있음 → 그대로 사용)
             GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(LabMobPath);
-            if (existing != null && existing.transform.Find("WallBlocker") != null)
+            if (existing != null)
             {
+                if (existing.transform.Find("Sprite/M2Visual") == null)
+                {
+                    Debug.LogWarning("[LaboratoryMapBuilder] LabMob.prefab 에 Sprite/M2Visual 이 없습니다. 기존 외형 그대로 사용합니다.");
+                }
+
                 return existing;
             }
 
@@ -791,14 +807,18 @@ namespace Unleash.Laboratory.EditorTools
 
         /// <summary>
         /// 맵 구역 정의 (1 칸 = 1 유닛 = 16px).
-        /// 진행: Z0 로비 → Z1 복도 → Z2 첫 습격 → Z3 도주 복도 → Z4 조명실 → Z5 손전등 구간
-        ///      → Z6 연구동 복도(방 매복 R1~R3) → Z7 대형 홀(조명 ON) → Z8 좁은 골목(양방향 협공)
-        ///      → Z9 디펜스(보스 셔터) → Z10 보스방 전실 (종료)
+        /// 진행: Z0 로비 → Z1 비상등 복도 → Z2 첫 습격 → Z3 도주 → Z4 조명실 → Z5 손전등 사무실
+        ///      → Z6 연구동 복도(R1 매복 / R2 직원 휴게실 / R3 봉인 표본실) → Z7 대형 홀(조명 ON 집단전)
+        ///      → [Sector C] C0 장거리 연구 복도 ┬ C1 화학실(전력 패널) → C2 저장실(보급)
+        ///                                       ├ C8 생물실(탐색)
+        ///                                       └ C3 관찰 복도(유리 너머 표본) → C4 격리실 봉쇄
+        ///      → C5 휴게실 → C6 비상 계단 → Z8 좁은 골목(앞뒤 협공) → C7 보안실 → Z9 디펜스 → Z10 보스방 전실
         /// 남북 벽 두께 3칸(벽면 2 + 윗면 1), 문은 북쪽 벽면에만 배치(에셋이 정면 문).
+        /// 동서 연결은 문 없이 바닥이 맞닿는 통로.
         /// </summary>
         private class LabLayout
         {
-            public const int OX = -8, OY = -8, W = 124, H = 164;
+            public const int OX = -8, OY = -8, W = 124, H = 176;
             public readonly Cell[,] cells = new Cell[W, H];
             public readonly int[,] zoneOf = new int[W, H];
             public readonly List<Zone> zones = new List<Zone>();
@@ -824,30 +844,60 @@ namespace Unleash.Laboratory.EditorTools
                 AddZone(new Zone("Z5_FlashRoom", 41, 52, 54, 61, "whitegrid", "lab"));
                 AddZone(new Zone("Z6_LabCorridor", 42, 65, 82, 69, "plates", "clean"));
                 AddZone(new Zone("R1_Lab", 48, 73, 55, 80, "teal", "clean"));
-                AddZone(new Zone("R2_Quarantine", 57, 55, 64, 61, "teal", "clean"));
-                AddZone(new Zone("R3_Containment", 62, 73, 67, 80, "darkplate", "contain"));
+                AddZone(new Zone("R2_Lounge", 57, 55, 64, 61, "lobby", "lobby"));
+                AddZone(new Zone("R3_SpecimenVault", 62, 73, 67, 80, "darkplate", "contain"));
                 AddZone(new Zone("Z7_Hall", 70, 73, 99, 94, "speckle", "server"));
-                AddZone(new Zone("Z8_AlleyLink", 83, 98, 85, 104, "darkplate", "reactor"));
+
+                // ── Sector C (확장 연구동) ──
+                // C0 장거리 연구 복도: 동쪽 끝(x69)이 대형 홀 서쪽 벽(x70)과 맞닿아 열린 통로가 된다.
+                AddZone(new Zone("C0_ResearchCorridor", 20, 84, 69, 88, "plates", "clean"));
+                AddZone(new Zone("C1_Chemistry", 22, 71, 35, 80, "whitegrid", "lab"));
+                AddZone(new Zone("C2_Storage", 38, 75, 45, 80, "concrete", "lab"));
+                AddZone(new Zone("C8_Biology", 6, 76, 19, 93, "teal", "clean"));
+                AddZone(new Zone("C3_Observation", 22, 92, 47, 94, "darkplate", "contain"));
+                // 격리 칸은 문 폭(2칸)과 같게 → 직선 추적 AI 가 칸 모서리에 걸리지 않고 문으로 바로 나온다.
+                AddZone(new Zone("C3_Cell_A", 24, 98, 25, 100, "metal", "contain"));
+                AddZone(new Zone("C3_Cell_B", 30, 98, 31, 100, "metal", "contain"));
+                AddZone(new Zone("C3_Cell_C", 36, 98, 37, 100, "metal", "contain"));
+                AddZone(new Zone("C3_Vestibule", 42, 98, 45, 100, "grate", "contain"));
+                AddZone(new Zone("C4_Containment", 22, 104, 49, 113, "metal", "contain"));
+                AddZone(new Zone("C5_BreakRoom", 40, 117, 55, 123, "lobby", "lobby"));
+                AddZone(new Zone("C6_Stairwell", 56, 111, 59, 123, "dark", "reactor"));
+
                 AddZone(new Zone("Z8_Alley", 56, 105, 92, 107, "darkplate", "reactor"));
-                AddZone(new Zone("Z9_Defense", 62, 111, 85, 130, "bluedot", "reactor"));
-                AddZone(new Zone("Z10_BossAnte", 68, 134, 79, 141, "checker", "reactor"));
+                AddZone(new Zone("Z8_Center", 69, 101, 78, 104, "darkplate", "reactor"));
+                AddZone(new Zone("C7_Security", 65, 111, 82, 117, "bluedot", "server"));
+                AddZone(new Zone("Z9_Defense", 62, 111 + D9, 85, 130 + D9, "bluedot", "reactor"));
+                AddZone(new Zone("Z10_BossAnte", 68, 134 + D9, 79, 141 + D9, "checker", "reactor"));
 
                 // 문: 종류, 왼쪽 x, 벽면 아래 y, 위쪽 연결칸 여부, 자동 열림, 잠김
                 AddDoor("Door_LobbyExit", "slide_lobby", 8, 12, true, "Z1_Corridor", true, false);
                 AddDoor("Door_LightToFlash", "door_lab", 47, 49, true, "Z5_FlashRoom", true, false);
                 AddDoor("Door_FlashToLabs", "door_lab", 47, 62, true, "Z6_LabCorridor", true, false);
                 AddDoor("Door_R1", "door_lab", 51, 70, true, "R1_Lab", false, true);
-                AddDoor("Door_R2", "door_lab", 60, 62, true, "Z6_LabCorridor", false, true);
-                AddDoor("Door_R3", "door_contain", 65, 70, true, "R3_Containment", false, true);
+                AddDoor("Door_R2", "door_lab", 60, 62, true, "Z6_LabCorridor", true, false);
+                AddDoor("Door_R3", "door_contain", 65, 70, true, "R3_SpecimenVault", false, true);
                 AddDoor("Door_Hall", "door_contain", 79, 70, true, "Z7_Hall", true, false);
-                AddDoor("Door_HallToAlley", "door_reactor", 84, 95, true, "Z8_AlleyLink", true, false);
-                DoorDef def = AddDoor("Door_AlleyToDefense", "door_reactor", 73, 108, true, "Z9_Defense", true, true);
+
+                AddDoor("Door_Chem", "door_lab", 28, 81, true, "C0_ResearchCorridor", true, false);
+                AddDoor("Door_Storage", "door_lab", 41, 81, true, "C0_ResearchCorridor", true, true);
+                AddDoor("Door_Obs", "door_contain", 33, 89, true, "C3_Observation", true, false);
+                AddDoor("Door_ObsToVestibule", "door_contain", 43, 95, true, "C3_Vestibule", true, false);
+                AddDoor("Door_Cell_A", "door_contain", 24, 101, true, "C4_Containment", false, true);
+                AddDoor("Door_Cell_B", "door_contain", 30, 101, true, "C4_Containment", false, true);
+                AddDoor("Door_Cell_C", "door_contain", 36, 101, true, "C4_Containment", false, true);
+                AddDoor("Door_LockdownEntry", "door_contain", 43, 101, true, "C4_Containment", true, false);
+                AddDoor("Door_LockdownExit", "door_reactor", 46, 114, true, "C5_BreakRoom", true, true);
+                AddDoor("Door_AlleyWest", "door_reactor", 57, 108, true, "C6_Stairwell", true, false);
+
+                DoorDef def = AddDoor("Door_AlleyToDefense", "door_reactor", 73, 108, true, "C7_Security", true, true);
                 def.openDuration = 0.8f;
-                DoorDef gl = AddDoor("Gate_Boss_L", "shutter_reactor", 72, 131, true, "Z10_BossAnte", false, true);
-                DoorDef gr = AddDoor("Gate_Boss_R", "shutter_reactor", 74, 131, true, "Z10_BossAnte", false, true);
+                AddDoor("Door_SecurityToDefense", "door_reactor", 73, 118, true, "Z9_Defense", true, false);
+                DoorDef gl = AddDoor("Gate_Boss_L", "shutter_reactor", 72, 131 + D9, true, "Z10_BossAnte", false, true);
+                DoorDef gr = AddDoor("Gate_Boss_R", "shutter_reactor", 74, 131 + D9, true, "Z10_BossAnte", false, true);
                 gl.openDuration = 45f;
                 gr.openDuration = 45f;
-                AddDoor("Door_BossRoom", "shutter_contain", 73, 142, false, null, false, true);
+                AddDoor("Door_BossRoom", "shutter_contain", 73, 142 + D9, false, null, false, true);
             }
 
             public Zone Z(string name)
@@ -1072,7 +1122,15 @@ namespace Unleash.Laboratory.EditorTools
             BuildZ5FlashRoom(m);
             BuildZ6LabCorridor(m);
             BuildZ7Hall(m);
+            BuildC0ResearchCorridor(m);
+            BuildC1Chemistry(m);
+            BuildC8Biology(m);
+            BuildC3Observation(m);
+            BuildC4Lockdown(m);
+            BuildC5BreakRoom(m);
+            BuildC6Stairwell(m);
             BuildZ8Alley(m);
+            BuildC7Security(m);
             BuildZ9Defense(m);
             BuildZ10BossAnte(m);
 
@@ -1704,7 +1762,8 @@ namespace Unleash.Laboratory.EditorTools
             SetProp(e, "staggerInterval", 0.5f);
         }
 
-        // Z6 연구동 복도 ─ 방 3곳에서 문이 열리며 적이 튀어나온다.
+        // Z6 연구동 복도 ─ R1 만 매복(문이 열리며 튀어나옴). R2 는 적 없는 직원 휴게실(홀 전 휴식),
+        //                  R3 는 잠긴 봉인 표본실(벽 너머로 표본이 움직이는 게 보이지만 들어갈 수 없음).
         private static void BuildZ6LabCorridor(MapCtx m)
         {
             Transform lights = Child("Z6_LabCorridor", m.lights).transform;
@@ -1714,8 +1773,8 @@ namespace Unleash.Laboratory.EditorTools
             AddLight(m, lights, "Tube_3", new Vector2(70f, 67.5f), tube, 0.55f, 4f, 0.5f, LabFlickerLight.Pattern.BrokenFlicker, 0.6f, 0.3f);
             AddLight(m, lights, "Hall_Door_Glow", new Vector2(80f, 69f), new Color(0.5f, 1f, 0.7f), 0.5f, 2.5f);
             AddLight(m, lights, "R1_Red", new Vector2(52f, 77f), new Color(1f, 0.2f, 0.15f), 0.45f, 4f, 0.3f, LabFlickerLight.Pattern.AlarmPulse, 0.6f, 0.2f);
-            AddLight(m, lights, "R2_Green", new Vector2(61f, 58f), new Color(0.4f, 1f, 0.4f), 0.4f, 3.5f, 0.3f, LabFlickerLight.Pattern.SoftBreath, 0.6f, 0.4f);
-            AddLight(m, lights, "R3_Purple", new Vector2(65f, 77f), new Color(0.7f, 0.3f, 1f), 0.45f, 3.5f, 0.3f, LabFlickerLight.Pattern.SoftBreath, 0.8f, 0.3f);
+            AddLight(m, lights, "R2_Lounge_Warm", new Vector2(61f, 58.5f), new Color(1f, 0.82f, 0.55f), 0.85f, 5f, 1.5f, LabFlickerLight.Pattern.SoftBreath, 0.25f, 0.85f);
+            AddLight(m, lights, "R3_Purple", new Vector2(65f, 77f), new Color(0.7f, 0.3f, 1f), 0.55f, 4f, 0.3f, LabFlickerLight.Pattern.SoftBreath, 0.8f, 0.3f);
 
             // 복도 소품: 전부 북쪽 벽에 붙임 (통로 확보)
             Prop(m, "vending_drinks", 43.5f, 69f, true);
@@ -1726,31 +1785,39 @@ namespace Unleash.Laboratory.EditorTools
             Decal(m, 63, 68, Slime);
             Decal(m, 67, 66, Blood);
 
-            // 방 안 소품 (벽 쪽)
+            // R1 (생체 시료 연구실) 소품
             Prop(m, "specimen_tank", 49f, 80f, true);
             Prop(m, "cryo_pod_open", 54.5f, 80f, true, "CryoPod_Escaped");
-            Prop(m, "quarantine_bed", 63f, 60f, true);
-            AnimProp(m, m.props, "slime_tank", new Vector2(58f, 60f), 8f, true);
-            Prop(m, "containment_crate", 66f, 80f, true);
             Decal(m, 51, 75, Slime);
-            Decal(m, 60, 56, Slime);
+
+            // R2 직원 휴게실 ─ 적 없음. 따뜻한 조명, 자판기/정수기/의자 (벽 쪽).
+            Prop(m, "vending_drinks", 57.5f, 59f, true);
+            Prop(m, "water_cooler", 63.5f, 59f, true);
+            Prop(m, "waiting_chairs", 60.5f, 55f, true);
+            Prop(m, "plant_tall", 57.5f, 55f, true);
+            Hint(m, "Lounge", new Vector2(61f, 58f), "STAFF LOUNGE\n- CATCH YOUR BREATH -", LabHint.Mode.Proximity, 3.5f, HintWhite, false, 0f, 2.6f);
+
+            // R3 봉인 표본실 ─ 문은 영구 잠김. 복도를 지나가면 안의 표본 2마리가 깨어나 벽에 들러붙는다 (넘어오지 못함).
+            Prop(m, "containment_crate", 66f, 80f, true);
+            Prop(m, "specimen_tank", 63f, 80f, true);
             Decal(m, 64, 75, Biohazard);
+            Decal(m, 66, 74, Slime);
+            Hint(m, "VaultSealed", new Vector2(66f, 66.6f), "SPECIMEN VAULT  -  SEALED", LabHint.Mode.Proximity, 3.5f, HintRed, false, 0f, 2.4f);
 
             // 매복 적은 문 열(2칸) 안쪽에 세로로 배치 → 직선 추적 AI 가 문틀 모서리에 걸리지 않고 바로 튀어나온다.
             GameObject r1 = MobGroup(m, "Mobs_R1_Ambush");
             Mob(m, r1, 51, 75, false);
             Mob(m, r1, 52, 77, false);
-            GameObject r2 = MobGroup(m, "Mobs_R2_Ambush");
-            Mob(m, r2, 60, 59, false);
-            Mob(m, r2, 61, 57, false);
-            GameObject r3 = MobGroup(m, "Mobs_R3_Ambush");
-            Mob(m, r3, 65, 75, false);
-            Mob(m, r3, 66, 77, false);
-            Mob(m, r3, 65, 79, false);
-
             RoomAmbush(m, "R1", new Vector2(52f, 67f), D(m, "Door_R1"), r1);
-            RoomAmbush(m, "R2", new Vector2(61f, 67f), D(m, "Door_R2"), r2);
-            RoomAmbush(m, "R3", new Vector2(66f, 67f), D(m, "Door_R3"), r3);
+
+            GameObject vault = MobGroup(m, "Mobs_R3_Vault");
+            Mob(m, vault, 64, 76, false);
+            Mob(m, vault, 66, 78, false);
+            LabEncounter stir = Encounter(m, "R3_VaultStir", new Vector2(65f, 67f), new Vector2(5f, 5f));
+            SetArray(stir, "enemyGroups", new Object[] { vault });
+            SetProp(stir, "aggroRadius", 8f);
+            SetProp(stir, "delay", 0.6f);
+            SetProp(stir, "staggerInterval", 0.4f);
 
             GameObject roam = MobGroup(m, "Mobs_Z6_Corridor");
             Mob(m, roam, 74, 67);
@@ -1824,9 +1891,312 @@ namespace Unleash.Laboratory.EditorTools
             SetProp(s, "afterHint", after);
 
             Hint(m, "HallDark", new Vector2(81.5f, 77.5f), "TOO DARK...  FIND THE POWER", LabHint.Mode.Proximity, 3f, HintWhite);
+
+            // 홀의 유일한 다음 출구 = 서쪽 벽의 열린 통로 → Sector C (기존 북쪽 골목 연결 통로는 제거)
+            AddLight(m, lights, "WestExit_Glow", new Vector2(70.5f, 86.5f), new Color(0.5f, 1f, 0.7f), 0.45f, 3f);
+            Hint(m, "ToSectorC", new Vector2(72.5f, 86.5f), "<<<  SECTOR C", LabHint.Mode.Proximity, 4f, HintWhite, false, 0f, 2.6f);
         }
 
-        // Z8 좁은 골목 ─ 합류 지점에 들어서면 서쪽/동쪽 끝에서 동시에 몰려온다. 10초 버티면 디펜스실 문 해제.
+        // ═════════════════════════ 7-b. Sector C (확장 연구동) ═════════════════════════
+
+        // C0 장거리 연구 복도 ─ 50칸 직선 시야. 벽에서 튀어나온 엄폐물(원거리 적 대비), 남/북으로 갈림 방.
+        private static void BuildC0ResearchCorridor(MapCtx m)
+        {
+            Transform lights = Child("C0_ResearchCorridor", m.lights).transform;
+            Color tube = new Color(0.8f, 0.9f, 1f);
+            float[] tubes = { 24f, 36f, 48f, 60f };
+            for (int i = 0; i < tubes.Length; i++)
+            {
+                AddLight(m, lights, "Tube_" + i, new Vector2(tubes[i], 86.5f), tube, 0.5f, 4.5f, 0.5f, LabFlickerLight.Pattern.BrokenFlicker, 0.4f + 0.2f * i, 0.25f);
+            }
+
+            // 벽 돌출 엄폐물 (남/북 벽에 번갈아 붙임 → 가운데 3칸은 항상 비어 있음). 문 앞 칸은 비움.
+            Prop(m, "server_rack_wide", 24f, 84f, true, "Pillar_S1");
+            Prop(m, "containment_crate", 36f, 84f, true, "Pillar_S2");
+            Prop(m, "server_rack_wide", 48f, 84f, true, "Pillar_S3");
+            Prop(m, "containment_crate", 58f, 84f, true, "Pillar_S4");
+            Prop(m, "containment_crate", 29f, 87f, true, "Pillar_N1");
+            Prop(m, "server_rack_wide", 42f, 87f, true, "Pillar_N2");
+            Prop(m, "containment_crate", 53f, 87f, true, "Pillar_N3");
+            Prop(m, "server_rack_wide", 63f, 87f, true, "Pillar_N4");
+            Prop(m, "fire_suppression", 66.5f, 84f, true);
+
+            for (int x = 21; x <= 68; x += 8)
+            {
+                Decal(m, x, 86, HazardH);
+            }
+
+            Decal(m, 45, 85, Slime);
+            Decal(m, 31, 87, Blood);
+
+            Hint(m, "SectorC", new Vector2(64f, 86.5f), "SECTOR C  -  CONTAINMENT RESEARCH", LabHint.Mode.Proximity, 5f, HintWhite, false, 0f, 2.6f);
+            Hint(m, "ChemSign", new Vector2(28.9f, 85.1f), "CHEMISTRY  v", LabHint.Mode.Proximity, 3f, HintWhite, false, 0f, 2.2f);
+            Hint(m, "StorageSign", new Vector2(41.9f, 85.1f), "STORAGE  -  POWER OFFLINE", LabHint.Mode.Proximity, 3f, HintRed, false, 0f, 2.2f);
+            Hint(m, "ObsSign", new Vector2(34f, 87.9f), "OBSERVATION  ^", LabHint.Mode.Proximity, 3f, HintWhite, false, 0f, 2.2f);
+            Hint(m, "BioSign", new Vector2(21.5f, 86.5f), "<  BIOLOGY", LabHint.Mode.Proximity, 3f, HintWhite, false, 0f, 2.2f);
+
+            // 복도 배회 2 (홀에서 넘어오면 활성화, 기본에 가까운 감지 반경)
+            GameObject roam = MobGroup(m, "Mobs_C0_Roam");
+            Mob(m, roam, 33, 86, false);
+            Mob(m, roam, 51, 85, false);
+            LabEncounter e = Encounter(m, "C0_Roam", new Vector2(68f, 86.5f), new Vector2(2f, 5f));
+            SetArray(e, "enemyGroups", new Object[] { roam });
+            SetProp(e, "aggroRadius", 6f);
+            SetProp(e, "delay", 0f);
+            SetProp(e, "staggerInterval", 0f);
+
+            // 원거리 적 대비 스폰 마커 (지금은 비어 있음)
+            Transform ranged = Child("RangedFuture", m.markers).transform;
+            Marker(m, ranged, "Spawn_Ranged_Future_C0_West", 21, 86);
+            Marker(m, ranged, "Spawn_Ranged_Future_C0_Mid", 46, 88);
+            Marker(m, ranged, "Spawn_Ranged_Future_C4_NW", 23, 112);
+            Marker(m, ranged, "Spawn_Ranged_Future_C4_NE", 48, 112);
+            Marker(m, ranged, "Spawn_Ranged_Future_Hall_NE", 98, 93);
+            Marker(m, ranged, "Spawn_Ranged_Future_Alley_E", 92, 106);
+        }
+
+        // C1 화학실 (선택) ─ 어두운 방 안에 적 4. 맨 안쪽(남쪽) 전력 패널 E → 조명 ON + 옆 저장실(C2) 잠금 해제.
+        //   위험을 감수하고 방을 가로지르면 보급(저장실)을 얻는 짧은 우회로.
+        private static void BuildC1Chemistry(MapCtx m)
+        {
+            Zone chem = m.L.Z("C1_Chemistry");
+            Transform lights = Child("C1_Chemistry", m.lights).transform;
+            Transform mainRoot = Child("Main_Lights", lights).transform;
+            Color pale = new Color(0.85f, 1f, 0.9f);
+            List<Light2D> mains = new List<Light2D>();
+            mains.Add(AddLight(m, mainRoot, "Main_W", new Vector2(25.5f, 76f), pale, 1.05f, 6.5f, 2.5f));
+            mains.Add(AddLight(m, mainRoot, "Main_E", new Vector2(32.5f, 76f), pale, 1.05f, 6.5f, 2.5f));
+            mains.Add(AddLight(m, mainRoot, "Storage_Lamp", new Vector2(42f, 78f), new Color(1f, 0.9f, 0.7f), 0.9f, 4f, 1f));
+            GameObject toxic = Child("Toxic_Glow", lights);
+            AddLight(m, toxic.transform, "Spill", new Vector2(33.5f, 72.5f), new Color(0.5f, 1f, 0.3f), 0.55f, 3f, 0.3f, LabFlickerLight.Pattern.SoftBreath, 0.7f, 0.4f);
+            AddLight(m, lights, "Panel_Glow", new Vector2(29f, 72f), new Color(0.4f, 1f, 0.6f), 0.6f, 2.2f);
+
+            Zone storage = m.L.Z("C2_Storage");
+            Vector2 zoneCenter = (chem.Center + storage.Center) * 0.5f;
+            LabLightZone zone = LightZone(m, "C1_Chemistry", zoneCenter, new Vector2(24f, 11f), 0f, false, mains.ToArray());
+
+            Prop(m, "lab_bench", 24.5f, 80f, true);
+            Prop(m, "lab_bench", 33.5f, 80f, true);
+            Prop(m, "gas_cylinders", 23f, 71f, true);
+            Prop(m, "toxic_barrel_leak", 34f, 71f, true);
+            Prop(m, "lab_bench", 25.5f, 75f, true, "Bench_Island");
+            WallDecor(m, "periodic_table", 32.5f, 81f);
+            Decal(m, 32, 73, Slime);
+            Decal(m, 33, 74, Slime);
+            Decal(m, 27, 72, Crack);
+            Decal(m, 30, 77, Blood);
+
+            GameObject group = MobGroup(m, "Mobs_C1_Chemistry");
+            Mob(m, group, 23, 77, false);
+            Mob(m, group, 31, 74, false);
+            Mob(m, group, 34, 77, false);
+            Mob(m, group, 27, 73, false);
+            LabEncounter e = Encounter(m, "C1_Chemistry", new Vector2(29f, 79.5f), new Vector2(4f, 2f));
+            SetArray(e, "enemyGroups", new Object[] { group });
+            SetProp(e, "aggroRadius", 6f);
+            SetProp(e, "delay", 0.2f);
+            SetProp(e, "staggerInterval", 0.25f);
+            Hint(m, "ChemDark", new Vector2(29f, 78.6f), "POWER PANEL  -  BACK OF THE LAB", LabHint.Mode.Proximity, 2.5f, HintWhite, false, 0f, 2.2f);
+
+            // 전력 패널
+            GameObject panel = Child("PowerPanel_Chemistry", m.encounters, new Vector2(29f, 71.5f));
+            AnimProp(m, panel.transform, "control_console", new Vector2(29f, 71.1f), 8f, true);
+            CircleCollider2D trig = panel.AddComponent<CircleCollider2D>();
+            trig.isTrigger = true;
+            trig.radius = 1.8f;
+            panel.layer = 2;
+            LabHint prompt = Hint(m, "ChemPower", new Vector2(29f, 73.8f), "E  RESTORE POWER", LabHint.Mode.Manual, 0f, HintYellow, true);
+            LabHint after = Hint(m, "ChemPowered", new Vector2(29f, 76.5f), "POWER RESTORED  -  STORAGE UNLOCKED", LabHint.Mode.Manual, 0f, HintYellow, false, 4f, 2.6f);
+            LabPowerConsole console = panel.AddComponent<LabPowerConsole>();
+            SetProp(console, "prompt", prompt);
+            SetArray(console, "zones", new Object[] { zone });
+            SetArray(console, "doorsToUnlock", new Object[] { D(m, "Door_Storage") });
+            SetArray(console, "disableOnPower", new Object[] { toxic });
+            SetProp(console, "afterHint", after);
+
+            // C2 저장실 ─ 보급 스폰 마커 (픽업 시스템이 생기면 여기에 배치)
+            Prop(m, "containment_crate", 40f, 75f, true);
+            Prop(m, "filing_cabinet", 44.5f, 75f, true);
+            Prop(m, "geiger_counter", 43.5f, 78f, false, "Equipment_Geiger");
+            Prop(m, "cable_coil", 39.5f, 78f, false, "Equipment_Cable");
+            Transform supply = Child("C2_Storage_Supplies", m.markers).transform;
+            Marker(m, supply, "Spawn_Ammo_1", 41, 76);
+            Marker(m, supply, "Spawn_Ammo_2", 43, 76);
+            Marker(m, supply, "Spawn_Battery_1", 40, 79);
+            Marker(m, supply, "Spawn_ResearchNote_1", 44, 79);
+            Hint(m, "Storage", new Vector2(42f, 77.6f), "SUPPLY STORAGE", LabHint.Mode.Proximity, 2.5f, HintYellow, false, 0f, 2.2f);
+        }
+
+        // C8 생물실 (선택, 탐색) ─ 표본 수조가 늘어선 조용한 방. 배회 2. 변이체의 정체(연구원 출신)를 암시.
+        private static void BuildC8Biology(MapCtx m)
+        {
+            Transform lights = Child("C8_Biology", m.lights).transform;
+            Color green = new Color(0.45f, 1f, 0.55f);
+            AddLight(m, lights, "Tank_Glow_W", new Vector2(8f, 91.5f), green, 0.7f, 4f, 0.5f, LabFlickerLight.Pattern.SoftBreath, 0.5f, 0.5f);
+            AddLight(m, lights, "Tank_Glow_M", new Vector2(12f, 91.5f), green, 0.6f, 3.5f, 0.5f, LabFlickerLight.Pattern.SoftBreath, 0.7f, 0.5f);
+            AddLight(m, lights, "Tank_Glow_E", new Vector2(16f, 91.5f), green, 0.7f, 4f, 0.5f, LabFlickerLight.Pattern.SoftBreath, 0.6f, 0.5f);
+            AddLight(m, lights, "Dim_Teal", new Vector2(12f, 82f), new Color(0.5f, 0.85f, 1f), 0.4f, 5f, 0.5f, LabFlickerLight.Pattern.BrokenFlicker, 0.3f, 0.4f);
+
+            Prop(m, "specimen_tank", 8f, 91f, true);
+            Prop(m, "specimen_tank", 12f, 91f, true);
+            Prop(m, "specimen_tank", 16f, 91f, true);
+            AnimProp(m, m.props, "slime_tank", new Vector2(7f, 76f), 8f, true);
+            AnimProp(m, m.props, "slime_tank", new Vector2(17f, 76f), 8f, true);
+            Prop(m, "quarantine_bed", 12f, 76f, true);
+            Prop(m, "cryo_pod_open", 6.5f, 84f, true);
+            Decal(m, 10, 85, Slime);
+            Decal(m, 13, 80, Slime);
+            Decal(m, 9, 88, Biohazard);
+            Decal(m, 15, 83, Blood);
+
+            Hint(m, "BioLog", new Vector2(12f, 86.5f), "SUBJECT M-2 :  ORIGIN  -  LAB STAFF\n\"THEY WERE US.\"", LabHint.Mode.Proximity, 3.5f, HintRed, false, 0f, 2.4f);
+
+            GameObject group = MobGroup(m, "Mobs_C8_Biology");
+            Mob(m, group, 9, 81, false);
+            Mob(m, group, 15, 89, false);
+            LabEncounter e = Encounter(m, "C8_Biology", new Vector2(20f, 86.5f), new Vector2(2f, 5f));
+            SetArray(e, "enemyGroups", new Object[] { group });
+            SetProp(e, "aggroRadius", 6f);
+            SetProp(e, "delay", 0f);
+            SetProp(e, "staggerInterval", 0f);
+
+            Marker(m, Child("C8_Biology_Supplies", m.markers).transform, "Spawn_ResearchNote_2", 12, 84);
+        }
+
+        // C3 관찰 복도 ─ 유리(관찰창) 너머 격리 칸 3곳의 표본 5마리가 깨어나 창에 들러붙는다. 공격할 수 없다.
+        //   (실제 투명 유리 대신 벽면 + observation_window 로 표현. 적 스프라이트가 벽 위로 보인다.)
+        private static void BuildC3Observation(MapCtx m)
+        {
+            Transform lights = Child("C3_Observation", m.lights).transform;
+            AddLight(m, lights, "Gallery_Blue_W", new Vector2(28f, 93f), new Color(0.5f, 0.65f, 1f), 0.45f, 4.5f, 0.5f, LabFlickerLight.Pattern.SoftBreath, 0.3f, 0.7f);
+            AddLight(m, lights, "Gallery_Blue_E", new Vector2(40f, 93f), new Color(0.5f, 0.65f, 1f), 0.45f, 4.5f, 0.5f, LabFlickerLight.Pattern.SoftBreath, 0.4f, 0.7f);
+            Color cell = new Color(0.55f, 1f, 0.45f);
+            AddLight(m, lights, "Cell_A_Glow", new Vector2(25f, 99.5f), cell, 0.8f, 3f, 0.4f, LabFlickerLight.Pattern.SoftBreath, 0.6f, 0.4f);
+            AddLight(m, lights, "Cell_B_Glow", new Vector2(31f, 99.5f), cell, 0.8f, 3f, 0.4f, LabFlickerLight.Pattern.SoftBreath, 0.8f, 0.4f);
+            AddLight(m, lights, "Cell_C_Glow", new Vector2(37f, 99.5f), cell, 0.8f, 3f, 0.4f, LabFlickerLight.Pattern.SoftBreath, 0.5f, 0.4f);
+            AddLight(m, lights, "Vestibule", new Vector2(44f, 99.5f), new Color(1f, 0.85f, 0.5f), 0.5f, 2.5f);
+
+            WallDecor(m, "observation_window", 25f, 95f);
+            WallDecor(m, "observation_window", 31f, 95f);
+            WallDecor(m, "observation_window", 37f, 95f);
+            Decal(m, 27, 93, Crack);
+            Decal(m, 38, 92, Crack);
+
+            Hint(m, "Observation", new Vector2(34.5f, 92.7f), "SPECIMEN OBSERVATION", LabHint.Mode.Proximity, 3f, HintWhite, false, 0f, 2.4f);
+            Hint(m, "Glass", new Vector2(25f, 92.6f), "DO NOT TAP THE GLASS", LabHint.Mode.Proximity, 2.5f, HintRed, false, 0f, 2f);
+            Hint(m, "ContainmentLab", new Vector2(43.5f, 99.4f), "CONTAINMENT LAB  ^", LabHint.Mode.Proximity, 2.5f, HintWhite, false, 0f, 2f);
+
+            // 격리 칸 표본 5마리 (갤러리 진입 시 깨어남, 넓은 감지 반경 → 창으로 몰려옴). 칸 문은 잠겨 있다.
+            GameObject cells = MobGroup(m, "Mobs_C3_Specimens");
+            Mob(m, cells, 24, 99, false);
+            Mob(m, cells, 25, 98, false);
+            Mob(m, cells, 30, 99, false);
+            Mob(m, cells, 31, 98, false);
+            Mob(m, cells, 36, 99, false);
+            // 감지 반경 16: 관찰 복도에서는 창으로 몰려오고, 봉쇄 때는 격리실 어디에 있어도 칸에서 바로 튀어나온다.
+            LabEncounter e = Encounter(m, "C3_SpecimensWake", new Vector2(34f, 92.5f), new Vector2(4f, 2f));
+            SetArray(e, "enemyGroups", new Object[] { cells });
+            SetProp(e, "aggroRadius", 16f);
+            SetProp(e, "delay", 0.5f);
+            SetProp(e, "staggerInterval", 0.35f);
+        }
+
+        // C4 격리실 봉쇄 ─ 방 가운데에 서면 입구가 잠기고 격리 칸 문이 열린다(아까 본 표본들). 20초 후 출구/입구 해제.
+        private static void BuildC4Lockdown(MapCtx m)
+        {
+            Transform lights = Child("C4_Containment", m.lights).transform;
+            AddLight(m, lights, "Room_Dim", new Vector2(35.5f, 109f), new Color(0.85f, 0.9f, 1f), 0.55f, 9f, 2f, LabFlickerLight.Pattern.BrokenFlicker, 0.3f, 0.5f);
+            AddLight(m, lights, "Exit_Glow", new Vector2(47f, 113.5f), new Color(0.5f, 1f, 0.7f), 0.5f, 2.5f);
+
+            GameObject alarms = Child("Lockdown_Alarms", lights);
+            Color red = new Color(1f, 0.15f, 0.1f);
+            AddLight(m, alarms.transform, "Alarm_W", new Vector2(25f, 110f), red, 1.1f, 7f, 0.5f, LabFlickerLight.Pattern.AlarmPulse, 1.3f, 0.05f);
+            AddLight(m, alarms.transform, "Alarm_E", new Vector2(46f, 110f), red, 1.1f, 7f, 0.5f, LabFlickerLight.Pattern.AlarmPulse, 1.3f, 0.05f);
+            AddLight(m, alarms.transform, "Alarm_S", new Vector2(35.5f, 105f), red, 0.9f, 6f, 0.5f, LabFlickerLight.Pattern.AlarmPulse, 1.3f, 0.05f);
+            AnimProp(m, alarms.transform, "warning_beacon", new Vector2(28.5f, 115.5f), 14f, false, "Default", -88);
+            AnimProp(m, alarms.transform, "warning_beacon", new Vector2(41.5f, 115.5f), 14f, false, "Default", -88);
+            alarms.SetActive(false);
+
+            // 벽 쪽 장비 + 의도적인 엄폐물 2개 (넓은 방이라 숨을 곳)
+            Prop(m, "quarantine_bed", 25f, 112f, true);
+            Prop(m, "quarantine_bed", 31f, 112f, true);
+            Prop(m, "specimen_tank", 38f, 111f, true);
+            Prop(m, "cryo_pod_open", 42.5f, 112f, true);
+            Prop(m, "containment_crate", 29f, 107f, true, "Cover_W");
+            Prop(m, "containment_crate", 42f, 108f, true, "Cover_E");
+            for (int x = 23; x <= 37; x += 6)
+            {
+                Decal(m, x, 104, HazardH);
+            }
+
+            Decal(m, 25, 105, Slime);
+            Decal(m, 31, 106, Blood);
+            Decal(m, 36, 105, Slime);
+            Decal(m, 35, 109, Biohazard);
+
+            LabHint lockdown = Hint(m, "Lockdown", new Vector2(35.5f, 110.8f), "CONTAINMENT BREACH  -  LOCKDOWN\nHOLD OUT 20s", LabHint.Mode.Manual, 0f, HintRed, true, 7f, 3f);
+            Hint(m, "LockdownExit", new Vector2(46.5f, 111.8f), "EXIT  ^", LabHint.Mode.Proximity, 2.5f, HintWhite, false, 0f, 2.2f);
+
+            // 입구(남동쪽)에서 2칸만 들어와도 걸리도록 방 대부분을 덮는다 (출구로 바로 가는 길도 포함).
+            LabEncounter e = Encounter(m, "C4_Lockdown", new Vector2(35f, 109.5f), new Vector2(26f, 6f));
+            SetProp(e, "delay", 0.3f);
+            SetArray(e, "doorsToClose", new Object[] { D(m, "Door_LockdownEntry") });
+            SetArray(e, "doorsToOpen", new Object[] { D(m, "Door_Cell_A"), D(m, "Door_Cell_B"), D(m, "Door_Cell_C") });
+            SetArray(e, "doorsToUnlock", new Object[] { D(m, "Door_LockdownExit"), D(m, "Door_LockdownEntry") });
+            SetProp(e, "unlockDelay", 20f);
+            SetArray(e, "activateObjects", new Object[] { alarms });
+            SetArray(e, "hints", new Object[] { lockdown });
+        }
+
+        // C5 휴게실 ─ 봉쇄 직후 숨 돌리는 곳. 적 없음, 따뜻한 조명.
+        private static void BuildC5BreakRoom(MapCtx m)
+        {
+            Transform lights = Child("C5_BreakRoom", m.lights).transform;
+            AddLight(m, lights, "Warm", new Vector2(47.5f, 120.5f), new Color(1f, 0.82f, 0.55f), 0.95f, 6.5f, 2f, LabFlickerLight.Pattern.SoftBreath, 0.25f, 0.85f);
+            Prop(m, "vending_drinks", 41.5f, 123f, true);
+            Prop(m, "water_cooler", 43.5f, 123f, true);
+            Prop(m, "waiting_chairs", 50.5f, 123f, true);
+            Prop(m, "plant_tall", 40.5f, 117f, true);
+            Prop(m, "kiosk", 53.5f, 123f, true);
+            WallDecor(m, "corkboard", 46.5f, 124.5f);
+            Hint(m, "BreakRoom", new Vector2(47.5f, 120.5f), "BREAK ROOM\n- SAFE -", LabHint.Mode.Proximity, 3.5f, HintWhite, false, 0f, 2.6f);
+            Marker(m, Child("C5_BreakRoom_Supplies", m.markers).transform, "Spawn_Battery_2", 52, 118);
+        }
+
+        // C6 비상 계단 ─ 붉은 비상등만 켜진 좁은 정비 통로 (분위기 전환, 적 없음) → 골목 서쪽 끝으로 내려간다.
+        private static void BuildC6Stairwell(MapCtx m)
+        {
+            Transform lights = Child("C6_Stairwell", m.lights).transform;
+            Color red = new Color(1f, 0.2f, 0.12f);
+            AddLight(m, lights, "Emergency_Top", new Vector2(57.5f, 121.5f), red, 0.7f, 4f, 0.3f, LabFlickerLight.Pattern.AlarmPulse, 0.5f, 0.15f);
+            AddLight(m, lights, "Emergency_Bottom", new Vector2(57.5f, 113.5f), red, 0.7f, 4f, 0.3f, LabFlickerLight.Pattern.AlarmPulse, 0.5f, 0.15f);
+            AddLight(m, lights, "Broken_Tube", new Vector2(58f, 117.5f), new Color(0.8f, 0.9f, 1f), 0.6f, 2.5f, 0.3f, LabFlickerLight.Pattern.BrokenFlicker, 1.5f, 0f);
+            Decal(m, 57, 120, Slime);
+            Decal(m, 58, 115, Blood);
+            Decal(m, 57, 112, HazardH);
+            Decal(m, 58, 112, HazardH);
+            Hint(m, "Maintenance", new Vector2(57.9f, 118.5f), "MAINTENANCE\nREACTOR ALLEY  v", LabHint.Mode.Proximity, 3f, HintWhite, false, 0f, 2f);
+        }
+
+        // C7 보안실 ─ 협공 골목 직후, 디펜스 직전 휴식. 적 없음, 모니터 조명.
+        private static void BuildC7Security(MapCtx m)
+        {
+            Transform lights = Child("C7_Security", m.lights).transform;
+            AddLight(m, lights, "Ceiling", new Vector2(73.5f, 114f), new Color(0.85f, 0.92f, 1f), 0.8f, 6.5f, 2f, LabFlickerLight.Pattern.SoftBreath, 0.2f, 0.9f);
+            AddLight(m, lights, "Monitors_W", new Vector2(68f, 117.5f), new Color(0.4f, 0.7f, 1f), 0.6f, 3f);
+            AddLight(m, lights, "Monitors_E", new Vector2(78.5f, 117.5f), new Color(0.4f, 0.7f, 1f), 0.6f, 3f);
+            Prop(m, "desk_computer", 68f, 117f, true);
+            Prop(m, "supercomputer", 78.5f, 117f, true);
+            Prop(m, "filing_cabinet", 66.5f, 112f, true);
+            AnimProp(m, m.props, "server_rack_a", new Vector2(79.5f, 111f), 8f, true);
+            AnimProp(m, m.props, "server_rack_b", new Vector2(80.5f, 111f), 8f, true);
+            WallDecor(m, "whiteboard", 69.5f, 118f);
+            Hint(m, "Security", new Vector2(73.5f, 114.5f), "SECURITY OFFICE  -  SAFE\nREACTOR CONTROL AHEAD  ^", LabHint.Mode.Proximity, 3.5f, HintWhite, false, 0f, 2.4f);
+            Marker(m, Child("C7_Security_Supplies", m.markers).transform, "Spawn_Ammo_3", 75, 112);
+        }
+
+        // Z8 좁은 골목 ─ 서쪽 끝 문(비상 계단)으로 들어와 동쪽으로 진행. 가운데 넓은 칸(Z8_Center)에 들어서면
+        //   뒤(서쪽) 문이 닫혀 잠기고, 지나온 서쪽과 앞쪽 동쪽 끝에서 동시에 몰려온다. 10초 버티면 보안실 문 해제.
         private static void BuildZ8Alley(MapCtx m)
         {
             Transform lights = Child("Z8_Alley", m.lights).transform;
@@ -1834,54 +2204,61 @@ namespace Unleash.Laboratory.EditorTools
             AddLight(m, lights, "Strobe_W", new Vector2(62f, 106.5f), red, 0.8f, 4.5f, 0.3f, LabFlickerLight.Pattern.AlarmPulse, 1.6f, 0.05f);
             AddLight(m, lights, "Strobe_Mid", new Vector2(74f, 106.5f), red, 0.8f, 4.5f, 0.3f, LabFlickerLight.Pattern.AlarmPulse, 1.6f, 0.05f);
             AddLight(m, lights, "Strobe_E", new Vector2(86f, 106.5f), red, 0.8f, 4.5f, 0.3f, LabFlickerLight.Pattern.AlarmPulse, 1.6f, 0.05f);
-            AddLight(m, lights, "Link_Tube", new Vector2(84.5f, 101f), new Color(0.8f, 0.9f, 1f), 0.5f, 3f, 0.3f, LabFlickerLight.Pattern.BrokenFlicker, 0.7f, 0.2f);
+            AddLight(m, lights, "Center_Tube", new Vector2(74f, 103.2f), new Color(0.8f, 0.9f, 1f), 0.6f, 3.5f, 0.3f, LabFlickerLight.Pattern.BrokenFlicker, 0.7f, 0.2f);
 
             for (int x = 57; x <= 91; x += 6)
             {
                 Decal(m, x, 106, HazardH);
             }
 
+            Decal(m, 71, 102, Crack);
+            Decal(m, 76, 103, Blood);
+
             Transform spawnRoot = Child("Z8_SpawnPoints", m.markers).transform;
-            Marker(m, spawnRoot, "SpawnPoint_West_A", 57, 106);
-            Marker(m, spawnRoot, "SpawnPoint_West_B", 58, 105);
+            Marker(m, spawnRoot, "SpawnPoint_West_A", 60, 106);
+            Marker(m, spawnRoot, "SpawnPoint_West_B", 61, 105);
             Marker(m, spawnRoot, "SpawnPoint_East_A", 91, 106);
             Marker(m, spawnRoot, "SpawnPoint_East_B", 90, 107);
 
+            // 뒤쪽(서쪽): 플레이어가 지나온 자리에서 나타난다 (발동 전에는 꺼져 있음)
             GameObject west = MobGroup(m, "Mobs_Z8_West");
-            Mob(m, west, 57, 106, false);
-            Mob(m, west, 58, 105, false);
-            Mob(m, west, 58, 107, false);
             Mob(m, west, 60, 106, false);
+            Mob(m, west, 61, 105, false);
+            Mob(m, west, 61, 107, false);
+            Mob(m, west, 63, 106, false);
+            // 앞쪽(동쪽)
             GameObject east = MobGroup(m, "Mobs_Z8_East");
             Mob(m, east, 91, 106, false);
             Mob(m, east, 90, 105, false);
             Mob(m, east, 90, 107, false);
+            Mob(m, east, 88, 106, false);
 
-            LabHint warn = Hint(m, "BothSides", new Vector2(80f, 106f), "THEY'RE COMING FROM BOTH SIDES!", LabHint.Mode.Manual, 0f, HintRed, true, 5f);
+            LabHint warn = Hint(m, "BothSides", new Vector2(74f, 102.6f), "THEY'RE COMING FROM BOTH SIDES!", LabHint.Mode.Manual, 0f, HintRed, true, 5f);
             Hint(m, "ReactorAccess", new Vector2(73.9f, 105.2f), "REACTOR ACCESS", LabHint.Mode.Proximity, 4f, HintWhite, false, 0f, 2.6f);
 
-            LabEncounter e = Encounter(m, "Z8_Alley", new Vector2(84.5f, 104f), new Vector2(3f, 2f));
+            LabEncounter e = Encounter(m, "Z8_Alley", new Vector2(74f, 104.5f), new Vector2(8f, 6f));
             SetArray(e, "enemyGroups", new Object[] { west, east });
             SetProp(e, "aggroRadius", 40f);
             SetProp(e, "delay", 0.3f);
             SetProp(e, "staggerInterval", 0.3f);
+            SetArray(e, "doorsToClose", new Object[] { D(m, "Door_AlleyWest") });
             SetArray(e, "doorsToUnlock", new Object[] { D(m, "Door_AlleyToDefense") });
             SetProp(e, "unlockDelay", 10f);
             SetArray(e, "hints", new Object[] { warn });
         }
 
-        // Z9 디펜스 ─ 콘솔 E → 보스 셔터 45초에 걸쳐 열림, 사방 WavePoint 에서 웨이브.
+        // Z9 디펜스 ─ 콘솔 E → 보스 셔터 45초에 걸쳐 열림, 사방 WavePoint 에서 웨이브. (보안실 삽입으로 D9 만큼 북쪽 이동)
         private static void BuildZ9Defense(MapCtx m)
         {
-            Zone z = m.L.Z("Z9_Defense");
+            const int d = D9;
             Transform lights = Child("Z9_Defense", m.lights).transform;
-            AddLight(m, lights, "Ambient_Center", new Vector2(73.5f, 120f), new Color(0.5f, 0.6f, 1f), 0.35f, 8f, 1f, LabFlickerLight.Pattern.SoftBreath, 0.3f, 0.6f);
-            AddLight(m, lights, "Gate_Glow", new Vector2(74f, 130f), new Color(1f, 0.55f, 0.2f), 0.6f, 4f);
+            AddLight(m, lights, "Ambient_Center", new Vector2(73.5f, 120f + d), new Color(0.5f, 0.6f, 1f), 0.35f, 8f, 1f, LabFlickerLight.Pattern.SoftBreath, 0.3f, 0.6f);
+            AddLight(m, lights, "Gate_Glow", new Vector2(74f, 130f + d), new Color(1f, 0.55f, 0.2f), 0.6f, 4f);
 
             Transform alarmRoot = Child("Alarms", lights).transform;
             Color orange = new Color(1f, 0.35f, 0.1f);
             List<Light2D> alarms = new List<Light2D>();
-            Vector2[] ap = { new Vector2(64f, 113f), new Vector2(84f, 113f), new Vector2(64f, 128f), new Vector2(84f, 128f) };
+            Vector2[] ap = { new Vector2(64f, 113f + d), new Vector2(84f, 113f + d), new Vector2(64f, 128f + d), new Vector2(84f, 128f + d) };
             foreach (Vector2 p in ap)
             {
                 Light2D l = AddLight(m, alarmRoot, "Alarm", p, orange, 1.1f, 7f, 0.5f, LabFlickerLight.Pattern.AlarmPulse, 1f, 0.1f);
@@ -1889,16 +2266,16 @@ namespace Unleash.Laboratory.EditorTools
                 alarms.Add(l);
             }
 
-            AnimProp(m, m.props, "warning_beacon", new Vector2(70.5f, 132.5f), 14f, false, "Default", -88);
-            AnimProp(m, m.props, "warning_beacon", new Vector2(77.5f, 132.5f), 14f, false, "Default", -88);
-            AnimProp(m, m.props, "generator", new Vector2(63f, 120f), 8f, true);
-            AnimProp(m, m.props, "tesla_coil", new Vector2(85f, 119f), 10f, true);
-            AnimProp(m, m.props, "capacitor_bank", new Vector2(68f, 130f), 8f, true);
-            AnimProp(m, m.props, "capacitor_bank", new Vector2(80f, 130f), 8f, true);
+            AnimProp(m, m.props, "warning_beacon", new Vector2(70.5f, 132.5f + d), 14f, false, "Default", -88);
+            AnimProp(m, m.props, "warning_beacon", new Vector2(77.5f, 132.5f + d), 14f, false, "Default", -88);
+            AnimProp(m, m.props, "generator", new Vector2(63f, 120f + d), 8f, true);
+            AnimProp(m, m.props, "tesla_coil", new Vector2(85f, 119f + d), 10f, true);
+            AnimProp(m, m.props, "capacitor_bank", new Vector2(68f, 130f + d), 8f, true);
+            AnimProp(m, m.props, "capacitor_bank", new Vector2(80f, 130f + d), 8f, true);
 
             for (int x = 72; x <= 75; x++)
             {
-                Decal(m, x, 129, HazardH);
+                Decal(m, x, 129 + d, HazardH);
             }
 
             // 웨이브 포인트 (사방): 바닥 배수구로 표시 → "환풍구에서 기어 나온다"
@@ -1908,13 +2285,13 @@ namespace Unleash.Laboratory.EditorTools
             List<Object> points = new List<Object>();
             for (int i = 0; i < wp.GetLength(0); i++)
             {
-                points.Add(Marker(m, wpRoot, wpNames[i], wp[i, 0], wp[i, 1]));
-                Decal(m, wp[i, 0], wp[i, 1], Drain);
+                points.Add(Marker(m, wpRoot, wpNames[i], wp[i, 0], wp[i, 1] + d));
+                Decal(m, wp[i, 0], wp[i, 1] + d, Drain);
             }
 
             for (int x = 70; x <= 77; x++)
             {
-                for (int y = 116; y <= 123; y++)
+                for (int y = 116 + d; y <= 123 + d; y++)
                 {
                     m.floor.SetTile(new Vector3Int(x, y, 0), GetTile(T(FloorSprite("grate", x, y))));
                 }
@@ -1928,25 +2305,25 @@ namespace Unleash.Laboratory.EditorTools
             fx.AddComponent<LabSpriteLoop>().Setup(Frames("anim_dust_puff"), 16f, true);
             fx.SetActive(false);
 
-            GameObject console = Child("DefenseConsole", m.encounters, new Vector2(74f, 113f));
-            AnimProp(m, console.transform, "control_console", new Vector2(74f, 112.6f), 8f, true);
+            GameObject console = Child("DefenseConsole", m.encounters, new Vector2(74f, 113f + d));
+            AnimProp(m, console.transform, "control_console", new Vector2(74f, 112.6f + d), 8f, true);
             CircleCollider2D trig = console.AddComponent<CircleCollider2D>();
             trig.isTrigger = true;
             trig.radius = 1.8f;
             console.layer = 2;
-            AddLight(m, console.transform, "Console_Glow", new Vector2(74f, 113.8f), new Color(0.4f, 1f, 0.6f), 0.7f, 2.5f);
+            AddLight(m, console.transform, "Console_Glow", new Vector2(74f, 113.8f + d), new Color(0.4f, 1f, 0.6f), 0.7f, 2.5f);
 
-            LabHint prompt = Hint(m, "Console", new Vector2(74f, 115.3f), "E  OPEN REACTOR GATE", LabHint.Mode.Manual, 0f, HintYellow, true);
-            LabHint status = Hint(m, "DefenseStatus", new Vector2(74f, 122.5f), "GATE OPENING", LabHint.Mode.Manual, 0f, HintRed, true, 0f, 3.6f);
-            LabHint done = Hint(m, "GateOpen", new Vector2(74f, 127f), "GATE OPEN  -  GO NORTH", LabHint.Mode.Manual, 0f, HintYellow, false, 6f, 3.6f);
-            Hint(m, "DefenseIntro", new Vector2(74f, 117.5f), "REACTOR GATE CONTROL", LabHint.Mode.Proximity, 4f, HintWhite, false, 0f, 2.6f);
+            LabHint prompt = Hint(m, "Console", new Vector2(74f, 115.3f + d), "E  OPEN REACTOR GATE", LabHint.Mode.Manual, 0f, HintYellow, true);
+            LabHint status = Hint(m, "DefenseStatus", new Vector2(74f, 122.5f + d), "GATE OPENING", LabHint.Mode.Manual, 0f, HintRed, true, 0f, 3.6f);
+            LabHint done = Hint(m, "GateOpen", new Vector2(74f, 127f + d), "GATE OPEN  -  GO NORTH", LabHint.Mode.Manual, 0f, HintYellow, false, 6f, 3.6f);
+            Hint(m, "DefenseIntro", new Vector2(74f, 117.5f + d), "REACTOR GATE CONTROL", LabHint.Mode.Proximity, 4f, HintWhite, false, 0f, 2.6f);
 
             LabDefenseEvent ev = console.AddComponent<LabDefenseEvent>();
             SetProp(ev, "prompt", prompt);
             SetArray(ev, "gates", new Object[] { D(m, "Gate_Boss_L"), D(m, "Gate_Boss_R") });
             SetProp(ev, "gateOpenDuration", 45f);
-            SetArray(ev, "lockBehind", new Object[] { D(m, "Door_AlleyToDefense") });
-            SetArray(ev, "unlockOnComplete", new Object[] { D(m, "Door_AlleyToDefense") });
+            SetArray(ev, "lockBehind", new Object[] { D(m, "Door_SecurityToDefense") });
+            SetArray(ev, "unlockOnComplete", new Object[] { D(m, "Door_SecurityToDefense") });
             SetProp(ev, "enemyPrefab", m.labMob);
             SetProp(ev, "waveGroup", waveGroup.transform);
             SetArray(ev, "wavePoints", points.ToArray());
@@ -1992,27 +2369,28 @@ namespace Unleash.Laboratory.EditorTools
         // Z10 보스방 전실 ─ 맵 끝. 보스방 문은 잠겨 있음(보스맵 미구현).
         private static void BuildZ10BossAnte(MapCtx m)
         {
+            const int d = D9;
             Transform lights = Child("Z10_BossAnte", m.lights).transform;
-            AddLight(m, lights, "Ominous", new Vector2(74f, 140f), new Color(0.75f, 0.2f, 0.9f), 0.8f, 6f, 1f, LabFlickerLight.Pattern.SoftBreath, 0.5f, 0.5f);
-            AddLight(m, lights, "Beacon_L", new Vector2(71.5f, 141f), new Color(1f, 0.15f, 0.1f), 0.7f, 3f, 0.3f, LabFlickerLight.Pattern.AlarmPulse, 1f, 0.1f);
-            AddLight(m, lights, "Beacon_R", new Vector2(76.5f, 141f), new Color(1f, 0.15f, 0.1f), 0.7f, 3f, 0.3f, LabFlickerLight.Pattern.AlarmPulse, 1f, 0.1f);
-            AnimProp(m, m.props, "warning_beacon", new Vector2(71.5f, 143.5f), 14f, false, "Default", -88);
-            AnimProp(m, m.props, "warning_beacon", new Vector2(76.5f, 143.5f), 14f, false, "Default", -88);
-            Prop(m, "rad_barrel", 68.5f, 141f, true);
-            Prop(m, "rad_barrel", 79.5f, 141f, true);
-            Prop(m, "coolant_tank", 68.5f, 134f, true);
-            Prop(m, "coolant_tank", 79.5f, 134f, true);
+            AddLight(m, lights, "Ominous", new Vector2(74f, 140f + d), new Color(0.75f, 0.2f, 0.9f), 0.8f, 6f, 1f, LabFlickerLight.Pattern.SoftBreath, 0.5f, 0.5f);
+            AddLight(m, lights, "Beacon_L", new Vector2(71.5f, 141f + d), new Color(1f, 0.15f, 0.1f), 0.7f, 3f, 0.3f, LabFlickerLight.Pattern.AlarmPulse, 1f, 0.1f);
+            AddLight(m, lights, "Beacon_R", new Vector2(76.5f, 141f + d), new Color(1f, 0.15f, 0.1f), 0.7f, 3f, 0.3f, LabFlickerLight.Pattern.AlarmPulse, 1f, 0.1f);
+            AnimProp(m, m.props, "warning_beacon", new Vector2(71.5f, 143.5f + d), 14f, false, "Default", -88);
+            AnimProp(m, m.props, "warning_beacon", new Vector2(76.5f, 143.5f + d), 14f, false, "Default", -88);
+            Prop(m, "rad_barrel", 68.5f, 141f + d, true);
+            Prop(m, "rad_barrel", 79.5f, 141f + d, true);
+            Prop(m, "coolant_tank", 68.5f, 134f + d, true);
+            Prop(m, "coolant_tank", 79.5f, 134f + d, true);
             for (int x = 72; x <= 75; x++)
             {
-                Decal(m, x, 140, HazardH);
+                Decal(m, x, 140 + d, HazardH);
             }
 
-            Decal(m, 70, 137, Radiation);
-            Decal(m, 77, 137, Radiation);
+            Decal(m, 70, 137 + d, Radiation);
+            Decal(m, 77, 137 + d, Radiation);
 
-            GameObject endMarker = Child("BossRoomEntrance_End", m.markers, new Vector2(74f, 139f));
+            GameObject endMarker = Child("BossRoomEntrance_End", m.markers, new Vector2(74f, 139f + d));
             TriggerBox(endMarker, new Vector2(10f, 3f));
-            LabHint end = Hint(m, "End", new Vector2(74f, 137f), "BOSS AREA AHEAD\n- PROTOTYPE END -", LabHint.Mode.Manual, 0f, HintRed, true, 0f, 4f);
+            LabHint end = Hint(m, "End", new Vector2(74f, 137f + d), "BOSS AREA AHEAD\n- PROTOTYPE END -", LabHint.Mode.Manual, 0f, HintRed, true, 0f, 4f);
             LabLevelEnd le = endMarker.AddComponent<LabLevelEnd>();
             SetProp(le, "endHint", end);
         }
@@ -2033,12 +2411,20 @@ namespace Unleash.Laboratory.EditorTools
             GameObject player = (GameObject)PrefabUtility.InstantiatePrefab(playerPrefab);
             player.transform.position = start;
 
+            // 이 씬에서만: 플레이어 몸통 그림만 12% 축소 (Player.prefab 원본·콜라이더·총구·손전등은 그대로).
+            Transform body = player.transform.Find("Body");
+            if (body != null)
+            {
+                body.localScale = new Vector3(PlayerBodyScale, PlayerBodyScale, PlayerBodyScale);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(body);
+            }
+
             GameObject camGo = new GameObject("Main Camera");
             camGo.tag = "MainCamera";
             camGo.transform.position = new Vector3(start.x, start.y, -10f);
             Camera cam = camGo.AddComponent<Camera>();
             cam.orthographic = true;
-            cam.orthographicSize = 5f;
+            cam.orthographicSize = CameraOrthoSize;
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.02f, 0.027f, 0.047f, 1f);
             cam.nearClipPlane = 0.3f;

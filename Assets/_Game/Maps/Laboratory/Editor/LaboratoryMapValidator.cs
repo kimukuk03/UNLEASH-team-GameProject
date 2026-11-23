@@ -95,6 +95,44 @@ namespace Unleash.Laboratory.EditorTools
             }
 
             sb.AppendLine("Enemies placed: " + total + " (+ defense waves at runtime)");
+
+            // ── 모든 근거리 적이 현재 LabMob.prefab(M2 외형 포함)을 쓰는지 ──
+            GameObject labMob = AssetDatabase.LoadAssetAtPath<GameObject>(LaboratoryMapBuilder.LabMobPath);
+            int notLabMob = 0;
+            foreach (Monster mon in Object.FindObjectsOfType<Monster>(true))
+            {
+                // 씬 → LaboratoryMap.prefab(중첩) → LabMob.prefab → TestMob.prefab 순으로 출처를 따라가며 LabMob 이 있는지 본다.
+                bool fromLabMob = false;
+                GameObject cur = mon.gameObject;
+                for (int guard = 0; guard < 8 && cur != null; guard++)
+                {
+                    cur = PrefabUtility.GetCorrespondingObjectFromSource(cur);
+                    if (cur != null && AssetDatabase.GetAssetPath(cur) == LaboratoryMapBuilder.LabMobPath)
+                    {
+                        fromLabMob = true;
+                        break;
+                    }
+                }
+
+                if (!fromLabMob)
+                {
+                    notLabMob++;
+                    sb.AppendLine("  NOT LabMob: " + Path(mon.transform));
+                }
+            }
+
+            foreach (LabDefenseEvent ev in Object.FindObjectsOfType<LabDefenseEvent>(true))
+            {
+                Object prefab = new SerializedObject(ev).FindProperty("enemyPrefab").objectReferenceValue;
+                if (prefab != labMob)
+                {
+                    notLabMob++;
+                    sb.AppendLine("  Defense enemyPrefab is NOT LabMob: " + Path(ev.transform));
+                }
+            }
+
+            sb.AppendLine("Enemies not using LabMob.prefab: " + notLabMob
+                          + ", LabMob has M2Visual: " + (labMob != null && labMob.transform.Find("Sprite/M2Visual") != null));
             return sb.ToString();
         }
 
@@ -141,7 +179,7 @@ namespace Unleash.Laboratory.EditorTools
                     foreach (Vector2Int d in dirs)
                     {
                         Vector2Int n = c + d;
-                        if (dist.ContainsKey(n) || n.x < -10 || n.y < -10 || n.x > 130 || n.y > 170)
+                        if (dist.ContainsKey(n) || n.x < -10 || n.y < -10 || n.x > 130 || n.y > 200)
                         {
                             continue;
                         }
